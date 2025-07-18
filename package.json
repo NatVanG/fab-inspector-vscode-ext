@@ -1,7 +1,7 @@
 {
   "name": "fab-inspector",
   "displayName": "fab-inspector",
-  "description": "Run PBI Inspector V2 (aka Fab Inspector against your Microsoft Fabric CI/CD items directly within VS Code!",
+  "description": "Run PBI Inspector V2 (aka Fab Inspector) against your Microsoft Fabric CI/CD items directly within VS Code!",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.102.0"
@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "fab-inspector.helloWorld",
-        "title": "Hello World"
+        "command": "fab-inspector.inspect",
+        "title": "Fab Inspect"
       }
     ]
   },
