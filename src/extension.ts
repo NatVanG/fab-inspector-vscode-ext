@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import { exec, spawn } from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
 
 // Global constants
 const DOCKER_IMAGE_NAME = 'ghcr.io/natvang/fab-inspector:latest';
@@ -19,7 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
     const runFabInspectorCommand = vscode.commands.registerCommand('fab-inspector.inspect', async () => {
         // Prompt user for rules file, output directory, and formats
         const rulesFile = await vscode.window.showInputBox({
-            placeHolder: 'Enter the path to the rules file (e.g., rules.json)',
+            placeHolder: 'Enter the name of the rules file within your fab-inspector-rules folder (e.g., rules.json)',
                 prompt: 'Rules File Path',
                 validateInput: (value) => {
                     if (!value) {
@@ -33,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
             });
 
             const formats = await vscode.window.showInputBox({
-                placeHolder: 'Enter the output formats (e.g., json,html)',
+                placeHolder: 'Enter the output formats (e.g., json,html,console)',
                 prompt: 'Output Formats',
                 validateInput: (value) => {
                     if (!value) {
@@ -63,7 +64,20 @@ function runFabInspectorDocker(rulesFile: string, formats: string) {
 
     // Construct paths based on the workspace folder
     const fabricItemPath = workspaceFolder.uri.fsPath; // Root folder
-    const rulesPath = path.join(workspaceFolder.uri.fsPath, "Rules", rulesFile);
+    const rulesPath = path.join(workspaceFolder.uri.fsPath, "fab-inspector-rules", rulesFile);
+    const rulesDir = path.join(workspaceFolder.uri.fsPath, "fab-inspector-rules");
+
+    // Check if the fab-inspector-rules folder exists
+    if (!fs.existsSync(rulesDir)) {
+        vscode.window.showErrorMessage('The "fab-inspector-rules" folder was not found in the workspace. Please create this folder and add your rules files.');
+        return;
+    }
+
+    // Check if the specific rules file exists
+    if (!fs.existsSync(rulesPath)) {
+        vscode.window.showErrorMessage(`The rules file "${rulesFile}" was not found in the "fab-inspector-rules" folder.`);
+        return;
+    }
 
     // Check if the image needs to be pulled
     checkAndPullDockerImage(() => {
@@ -75,25 +89,25 @@ function runFabInspectorDocker(rulesFile: string, formats: string) {
         exec(`docker images -q ${DOCKER_IMAGE_NAME}`, (error, stdout, stderr) => {
             if (error || !stdout.trim()) {
                 // Image doesn't exist locally, pull it
-                vscode.window.showInformationMessage('Docker image not found locally. Pulling...');
+                vscode.window.showInformationMessage('Fab Inspector Docker image not found locally. Pulling...');
                 pullImage(callback);
             } else {
                 // Image exists locally, check if we need to update it
-                vscode.window.showInformationMessage('Checking for image updates...');
-                
+                vscode.window.showInformationMessage('Checking for Fab Inspector image updates...');
+
                 // Use docker pull with --platform to check for updates more efficiently
                 exec(`docker pull ${DOCKER_IMAGE_NAME}`, (pullError, pullStdout, pullStderr) => {
                     if (pullError) {
-                        vscode.window.showWarningMessage('Could not check for image updates. Using local image.');
+                        vscode.window.showWarningMessage('Could not check for Fab Inspector image updates. Using local image.');
                         callback();
                     } else {
                         // Check the pull output to see if image was updated
                         if (pullStdout.includes('Image is up to date')) {
-                            vscode.window.showInformationMessage('Docker image is already up to date.');
+                            vscode.window.showInformationMessage('Fab Inspector Docker image is already up to date.');
                         } else if (pullStdout.includes('Downloaded newer image') || pullStdout.includes('Status: Downloaded newer image')) {
-                            vscode.window.showInformationMessage('Docker image updated successfully.');
+                            vscode.window.showInformationMessage('Fab Inspector Docker image updated successfully.');
                         } else {
-                            vscode.window.showInformationMessage('Using local Docker image.');
+                            vscode.window.showInformationMessage('Using local Fab Inspector Docker image.');
                         }
                         callback();
                     }
@@ -105,10 +119,10 @@ function runFabInspectorDocker(rulesFile: string, formats: string) {
     function pullImage(callback: () => void) {
         exec(`docker pull ${DOCKER_IMAGE_NAME}`, (error, stdout, stderr) => {
             if (error) {
-                vscode.window.showErrorMessage(`Docker pull failed: ${stderr || error.message}`);
+                vscode.window.showErrorMessage(`Fab Inspector Docker pull failed: ${stderr || error.message}`);
                 return;
             }
-            vscode.window.showInformationMessage('Docker image pulled successfully.');
+            vscode.window.showInformationMessage('Fab Inspector Docker image pulled successfully.');
             callback();
         });
     }
