@@ -1,8 +1,11 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import * as path from 'path';
+
+// Global constants
+const DOCKER_IMAGE_NAME = 'ghcr.io/natvang/fab-inspector:latest';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -60,52 +63,130 @@ function runFabInspectorDocker(rulesFile: string, formats: string) {
 
     // Construct paths based on the workspace folder
     const fabricItemPath = workspaceFolder.uri.fsPath; // Root folder
-    const rulesPath = path.join(workspaceFolder.uri.fsPath, "rules", rulesFile);
+    const rulesPath = path.join(workspaceFolder.uri.fsPath, "Rules", rulesFile);
 
-    const dockerPull = 'docker pull ghcr.io/natvang/fab-inspector:latest';
-
-    exec(dockerPull, (error, stdout, stderr) => {
-        if (error) {
-            vscode.window.showErrorMessage(`Docker pull failed: ${stderr || error.message}`);
-            return;
-        }
-        vscode.window.showInformationMessage('Docker image pulled successfully. Running Fab Inspector...');
+    // Check if the image needs to be pulled
+    checkAndPullDockerImage(() => {
+        runDockerCommand();
     });
 
-    // Build the Docker command
+    function checkAndPullDockerImage(callback: () => void) {
+        // First, check if the image exists locally
+        exec(`docker images -q ${DOCKER_IMAGE_NAME}`, (error, stdout, stderr) => {
+            if (error || !stdout.trim()) {
+                // Image doesn't exist locally, pull it
+                vscode.window.showInformationMessage('Docker image not found locally. Pulling...');
+                pullImage(callback);
+            } else {
+                // Image exists locally, check if we need to update it
+                vscode.window.showInformationMessage('Checking for image updates...');
+                
+                // Use docker pull with --platform to check for updates more efficiently
+                exec(`docker pull ${DOCKER_IMAGE_NAME}`, (pullError, pullStdout, pullStderr) => {
+                    if (pullError) {
+                        vscode.window.showWarningMessage('Could not check for image updates. Using local image.');
+                        callback();
+                    } else {
+                        // Check the pull output to see if image was updated
+                        if (pullStdout.includes('Image is up to date')) {
+                            vscode.window.showInformationMessage('Docker image is already up to date.');
+                        } else if (pullStdout.includes('Downloaded newer image') || pullStdout.includes('Status: Downloaded newer image')) {
+                            vscode.window.showInformationMessage('Docker image updated successfully.');
+                        } else {
+                            vscode.window.showInformationMessage('Using local Docker image.');
+                        }
+                        callback();
+                    }
+                });
+            }
+        });
+    }
+
+    function pullImage(callback: () => void) {
+        exec(`docker pull ${DOCKER_IMAGE_NAME}`, (error, stdout, stderr) => {
+            if (error) {
+                vscode.window.showErrorMessage(`Docker pull failed: ${stderr || error.message}`);
+                return;
+            }
+            vscode.window.showInformationMessage('Docker image pulled successfully.');
+            callback();
+        });
+    }
+
+    function runDockerCommand() {
+        // Build the Docker command
     const rulesDir = path.dirname(rulesPath);
     const rulesFileName = path.basename(rulesPath);
 
     // Convert Windows paths to Docker-compatible format
-    function toDockerPath(p: string) {
-        return p.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (match, drive) => `/${drive.toLowerCase()}`);
-    }
+    // function toDockerPath(p: string) {
+    //     return p.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (match, drive) => `/${drive.toLowerCase()}`);
+    // }
 
-    const dockerFabricItemPath = toDockerPath(fabricItemPath);
-    const dockerRulesDir = toDockerPath(rulesDir);
+    // const dockerFabricItemPath = toDockerPath(fabricItemPath);
+    // const dockerRulesDir = toDockerPath(rulesDir);
 
     const dockerCmd = [
         'docker run --rm',
-        `-v "${dockerFabricItemPath}:/data/fabricitem"`,
-        `-v "${dockerRulesDir}:/data/rules"`,
-        'ghcr.io/natvang/fab-inspector:latest',
+        `-v "${fabricItemPath}:/data/fabricitem"`,
+        `-v "${rulesDir}:/data/rules"`,
+        DOCKER_IMAGE_NAME,
         '-fabricitem', '/data/fabricitem',
         '-rules', `/data/rules/${rulesFileName}`,
         '-formats', formats
     ].join(' ');
 
+    // Inform user that Fab Inspector is starting
+    vscode.window.showInformationMessage('Running Fab Inspector... This may take a few minutes.');
 
+    // Create output channel for real-time streaming
+    const channel = vscode.window.createOutputChannel('Fab Inspector');
+    channel.clear();
+    channel.show();
+    channel.appendLine('Starting Fab Inspector...');
+    channel.appendLine(`Command: ${dockerCmd}`);
+    channel.appendLine('');
 
-    exec(dockerCmd, (error, stdout, stderr) => {
-        if (error) {
-            vscode.window.showErrorMessage(`Docker run failed: ${stderr || error.message}`);
-            return;
-        }
-        vscode.window.showInformationMessage('Fab Inspector Docker run complete.');
-        const channel = vscode.window.createOutputChannel('Fab Inspector');
-        channel.append(stdout);
-        channel.show();
+    // Use spawn for real-time output streaming
+    const dockerProcess = spawn('docker', [
+        'run', '--rm',
+        '-v', `${fabricItemPath}:/data/fabricitem`,
+        '-v', `${rulesDir}:/data/rules`,
+        DOCKER_IMAGE_NAME,
+        '-fabricitem', '/data/fabricitem',
+        '-rules', `/data/rules/${rulesFileName}`,
+        '-formats', formats
+    ], {
+        shell: true // Use shell for Windows compatibility
     });
+
+    // Stream stdout in real-time
+    dockerProcess.stdout.on('data', (data) => {
+        channel.append(data.toString());
+    });
+
+    // Stream stderr in real-time
+    dockerProcess.stderr.on('data', (data) => {
+        channel.append(data.toString());
+    });
+
+    // Handle process completion
+    dockerProcess.on('close', (code) => {
+        if (code === 0) {
+            channel.appendLine('\nFab Inspector completed successfully.');
+            vscode.window.showInformationMessage('Fab Inspector completed successfully!');
+        } else {
+            channel.appendLine(`\nFab Inspector failed with exit code: ${code}`);
+            vscode.window.showErrorMessage(`Fab Inspector failed with exit code: ${code}`);
+        }
+    });
+
+    // Handle process errors
+    dockerProcess.on('error', (error) => {
+        channel.appendLine(`\nError running Fab Inspector: ${error.message}`);
+        vscode.window.showErrorMessage(`Docker run failed: ${error.message}`);
+    });
+    }
 }
 
 // This method is called when your extension is deactivated
