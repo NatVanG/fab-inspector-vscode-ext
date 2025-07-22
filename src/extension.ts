@@ -142,8 +142,8 @@ function runFabInspectorDocker(rulesFile: string, formats: string) {
 
     const dockerCmd = [
         'docker run --rm',
-        `-v "${fabricItemPath}:/data/fabricitem"`,
-        `-v "${rulesDir}:/data/rules"`,
+        `-v "${fabricItemPath}:/data/fabricitem:ro"`,
+        `-v "${rulesDir}:/data/rules:ro"`,
         DOCKER_IMAGE_NAME,
         '-fabricitem', '/data/fabricitem',
         '-rules', `/data/rules/${rulesFileName}`,
