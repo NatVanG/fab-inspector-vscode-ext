@@ -32,18 +32,17 @@ This extension contributes the following settings:
 
 * TBD
 
-## Known Issues
+## Known Issues and Limitations
 
 - Docker operations may be slower on Windows.
 - Requires Docker Desktop to be running before executing inspections.
 
 ## Release Notes
 
-### 1.0.0
+### 0.0.1
 
 Initial release with core functionality:
 - Docker-based Fab Inspector execution
-- Real-time output streaming
 - Custom rules support
 - Multiple output formats
 

@@ -132,14 +132,6 @@ function runFabInspectorDocker(rulesFile: string, formats: string) {
     const rulesDir = path.dirname(rulesPath);
     const rulesFileName = path.basename(rulesPath);
 
-    // Convert Windows paths to Docker-compatible format
-    // function toDockerPath(p: string) {
-    //     return p.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (match, drive) => `/${drive.toLowerCase()}`);
-    // }
-
-    // const dockerFabricItemPath = toDockerPath(fabricItemPath);
-    // const dockerRulesDir = toDockerPath(rulesDir);
-
     const dockerCmd = [
         'docker run --rm',
         `-v "${fabricItemPath}:/data/fabricitem:ro"`,
@@ -151,7 +143,7 @@ function runFabInspectorDocker(rulesFile: string, formats: string) {
     ].join(' ');
 
     // Inform user that Fab Inspector is starting
-    vscode.window.showInformationMessage('Running Fab Inspector... This may take a few minutes.');
+    vscode.window.showInformationMessage(`Running Fab Inspector with rules file "${rulesFileName}"... This may take a few minutes.`);
 
     // Create output channel for real-time streaming
     const channel = vscode.window.createOutputChannel('Fab Inspector');
