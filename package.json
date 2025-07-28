@@ -26,6 +26,26 @@
       {
         "command": "fab-inspector.inspect",
         "title": "Fab Inspect"
+      },
+      {
+        "command": "fab-inspector.wrapWithLog",
+        "title": "Fab Log"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "fab-inspector.wrapWithLog",
+          "when": "editorHasSelection && editorLangId == json",
+          "group": "fab-inspector"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "fab-inspector.wrapWithLog",
+        "key": "ctrl+shift+l",
+        "when": "editorTextFocus && editorHasSelection"
       }
     ]
   },

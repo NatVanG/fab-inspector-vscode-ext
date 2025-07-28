@@ -76,7 +76,51 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(runFabInspectorCommand);
+    // Register the command to wrap JSON with log node
+    const wrapWithLogCommand = vscode.commands.registerCommand('fab-inspector.wrapWithLog', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage('No active editor found.');
+            return;
+        }
+
+        const selection = editor.selection;
+        if (selection.isEmpty) {
+            vscode.window.showErrorMessage('Please select a JSON fragment to wrap with log.');
+            return;
+        }
+
+        const selectedText = editor.document.getText(selection);
+        
+        // Validate that the selected text is valid JSON
+        try {
+            JSON.parse(selectedText);
+        } catch (error) {
+            vscode.window.showErrorMessage('Selected text is not valid JSON.');
+            return;
+        }
+
+        // Parse and re-stringify to ensure proper formatting
+        const parsedJson = JSON.parse(selectedText);
+        const wrappedJson = {
+            "log": parsedJson
+        };
+
+        // Format the wrapped JSON with proper indentation
+        const formattedJson = JSON.stringify(wrappedJson, null, 2);
+
+        // Replace the selected text with the wrapped version
+        await editor.edit(editBuilder => {
+            editBuilder.replace(selection, formattedJson);
+        });
+
+        // Format the entire document for nice indentation
+        await vscode.commands.executeCommand('editor.action.formatDocument');
+
+        vscode.window.showInformationMessage('JSON fragment wrapped with log node and document formatted.');
+    });
+
+    context.subscriptions.push(runFabInspectorCommand, wrapWithLogCommand);
 }
 
 async function runFabInspector(context: vscode.ExtensionContext, rulesFile: string, formats: string) {
