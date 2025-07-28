@@ -34,6 +34,10 @@
       {
         "command": "fab-inspector.unwrapLog",
         "title": "Fab Unlog"
+      },
+      {
+        "command": "fab-inspector.runRule",
+        "title": "Fab Run Rule"
       }
     ],
     "menus": {
@@ -45,6 +49,11 @@
         },
         {
           "command": "fab-inspector.unwrapLog",
+          "when": "editorHasSelection && editorLangId == json",
+          "group": "fab-inspector"
+        },
+        {
+          "command": "fab-inspector.runRule",
           "when": "editorHasSelection && editorLangId == json",
           "group": "fab-inspector"
         }
