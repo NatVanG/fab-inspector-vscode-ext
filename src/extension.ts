@@ -50,6 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
         const fabricItem = workspaceFolder.uri.fsPath;
+
         // Prompt user for rules file and formats
         const rulesFile = await vscode.window.showInputBox({
             placeHolder: 'Enter the name of the rules file within your fab-inspector-rules folder (e.g., rules.json)',
@@ -78,7 +79,8 @@ export function activate(context: vscode.ExtensionContext) {
 
         // Run Fab Inspector with the provided inputs
         if (rulesFile && formats) {
-            await runFabInspector(context, fabricItem, rulesFile, formats);
+            const rulesPath = path.join(workspaceFolder.uri.fsPath, "fab-inspector-rules", rulesFile);
+            await runFabInspector(context, fabricItem, rulesPath, formats);
         } else {
             vscode.window.showErrorMessage('All inputs (rules file and formats) are required.');
         }
@@ -247,8 +249,8 @@ export function activate(context: vscode.ExtensionContext) {
 
             console.log(`Created temporary rules file: ${tempRulesFile}`);
 
-            // Run Fab Inspector with the temporary rules file - pass cleanup function
-            await runFabInspectorWithTempFile(context, tempRulesFile, formats, workspaceFolder.uri.fsPath, () => {
+            // Run Fab Inspector with the temporary rules file and cleanup callback
+            await runFabInspector(context, workspaceFolder.uri.fsPath, tempRulesFile, formats, () => {
                 // Cleanup function to be called after the process completes
                 if (tempRulesFile && fs.existsSync(tempRulesFile)) {
                     try {
@@ -277,27 +279,18 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(runFabInspectorCommand, wrapWithLogCommand, unwrapLogCommand, runRuleCommand);
 }
 
-async function runFabInspector(context: vscode.ExtensionContext, fabricitem: string, rulesFile: string, formats: string) {
-    // Get the first workspace folder
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-        vscode.window.showErrorMessage('No workspace folder is open.');
-        return;
-    }
+async function runFabInspector(context: vscode.ExtensionContext, fabricItemPath: string, rulesPath: string, formats: string, cleanup?: () => void) {
+    // Validate rules file exists (only for non-temporary files)
+    if (!rulesPath.includes('fab-inspector-temp-rule') && !fs.existsSync(rulesPath)) {
+        const rulesDir = path.dirname(rulesPath);
+        const rulesFile = path.basename(rulesPath);
 
-    // Construct paths based on the workspace folder
-    const fabricItemPath = fabricitem;
-    const rulesPath = path.join(workspaceFolder.uri.fsPath, "fab-inspector-rules", rulesFile);
-    const rulesDir = path.join(workspaceFolder.uri.fsPath, "fab-inspector-rules");
-
-    // Validate paths
-    if (!fs.existsSync(rulesDir)) {
-        vscode.window.showErrorMessage('The "fab-inspector-rules" folder was not found in the workspace. Please create this folder and add your rules files.');
-        return;
-    }
-
-    if (!fs.existsSync(rulesPath)) {
-        vscode.window.showErrorMessage(`The rules file "${rulesFile}" was not found in the "fab-inspector-rules" folder.`);
+        if (!fs.existsSync(rulesDir)) {
+            vscode.window.showErrorMessage('The "fab-inspector-rules" folder was not found in the workspace. Please create this folder and add your rules files.');
+        } else {
+            vscode.window.showErrorMessage(`The rules file "${rulesFile}" was not found in the "fab-inspector-rules" folder.`);
+        }
+        cleanup?.();
         return;
     }
 
@@ -305,30 +298,32 @@ async function runFabInspector(context: vscode.ExtensionContext, fabricitem: str
     const executablePath = getFabInspectorExecutablePath(context);
     const hasBundledExecutable = await checkBundledExecutable(executablePath);
 
-    if (hasBundledExecutable) {
-        runNativeCommand(executablePath, fabricItemPath, rulesPath, formats);
-    } else {
+    if (!hasBundledExecutable) {
         vscode.window.showErrorMessage('Fab Inspector executable not found. Please ensure the extension is properly installed with the bundled executable.');
+        cleanup?.();
         return;
     }
+    // For full inspection, show output channel
+    await runNativeCommand(executablePath, fabricItemPath, rulesPath, formats, cleanup, false);
 }
 
-function runNativeCommand(executablePath: string, fabricItemPath: string, rulesPath: string, formats: string) {
+async function runNativeCommand(executablePath: string, fabricItemPath: string, rulesPath: string, formats: string, cleanup?: () => void, isSingleRule: boolean = false) {
     const rulesFileName = path.basename(rulesPath);
 
-    // Inform user that Fab Inspector is starting
-    vscode.window.showInformationMessage(`Running Fab Inspector with rules file "${rulesFileName}"...`);
-
-    // Create output channel for real-time streaming
-    const channel = vscode.window.createOutputChannel('Fab Inspector');
-    channel.clear();
-    channel.show();
-    channel.appendLine('Starting Fab Inspector...');
-    channel.appendLine(`Executable: ${executablePath}`);
-    channel.appendLine(`Fabric Item Path: ${fabricItemPath}`);
-    channel.appendLine(`Rules File: ${rulesPath}`);
-    channel.appendLine(`Formats: ${formats}`);
-    channel.appendLine('');
+    // Create output channel for full inspection mode
+    let channel: vscode.OutputChannel | undefined;
+    if (!isSingleRule) {
+        vscode.window.showInformationMessage(`Running Fab Inspector with rules file "${rulesFileName}"...`);
+        channel = vscode.window.createOutputChannel('Fab Inspector');
+        channel.clear();
+        channel.show();
+        channel.appendLine('Starting Fab Inspector...');
+        channel.appendLine(`Executable: ${executablePath}`);
+        channel.appendLine(`Fabric Item Path: ${fabricItemPath}`);
+        channel.appendLine(`Rules File: ${rulesPath}`);
+        channel.appendLine(`Formats: ${formats}`);
+        channel.appendLine('');
+    }
 
     // Build command arguments
     const args = [
@@ -337,134 +332,95 @@ function runNativeCommand(executablePath: string, fabricItemPath: string, rulesP
         '-formats', formats
     ];
 
+    console.log(`Running command: ${executablePath} ${args.join(' ')}`);
+    if (isSingleRule) {
+        console.log(`Temp rules file exists: ${fs.existsSync(rulesPath)}`);
+        console.log(`Temp rules file content: ${fs.readFileSync(rulesPath, 'utf8')}`);
+    }
+
     // Set working directory to the bin folder so the executable can find its Files folder
     const binDirectory = path.dirname(executablePath);
 
-    // Use spawn for real-time output streaming
-    const process = spawn(executablePath, args, {
-        cwd: binDirectory // Set working directory
-    });
+    return new Promise<void>((resolve, reject) => {
+        // Use spawn for real-time output streaming
+        const process = spawn(executablePath, args, {
+            cwd: binDirectory // Set working directory
+        });
 
-    // Stream stdout in real-time
-    process.stdout.on('data', (data) => {
-        channel.append(data.toString());
-    });
+        let stdout = '';
+        let stderr = '';
 
-    // Stream stderr in real-time
-    process.stderr.on('data', (data) => {
-        channel.append(data.toString());
-    });
+        // Stream stdout in real-time
+        process.stdout.on('data', (data) => {
+            const output = data.toString();
+            stdout += output;
+            if (channel) {
+                channel.append(output);
+            }
+        });
 
-    // Handle process completion
-    process.on('close', (code) => {
-        if (code === 0) {
-            channel.appendLine('\nFab Inspector completed successfully.');
-            vscode.window.showInformationMessage('Fab Inspector completed successfully!');
-        } else {
-            channel.appendLine(`\nFab Inspector failed with exit code: ${code}`);
-            vscode.window.showErrorMessage(`Fab Inspector failed with exit code: ${code}`);
-        }
-    });
+        // Stream stderr in real-time
+        process.stderr.on('data', (data) => {
+            const output = data.toString();
+            stderr += output;
+            if (channel) {
+                channel.append(output);
+            }
+        });
 
-    // Handle process errors
-    process.on('error', (error) => {
-        channel.appendLine(`\nError running Fab Inspector: ${error.message}`);
-        vscode.window.showErrorMessage(`Fab Inspector execution failed: ${error.message}. Please ensure the executable has proper permissions and dependencies are installed.`);
-    });
-}
+        // Handle process completion
+        process.on('close', (code) => {
+            // Call cleanup after process completes
+            cleanup?.();
 
-async function runFabInspectorWithTempFile(context: vscode.ExtensionContext, tempRulesFile: string, formats: string, fabricItemPath: string, cleanup?: () => void) {
-    // Get the executable path
-    const executablePath = getFabInspectorExecutablePath(context);
+            if (code === 0) {
+                // Success
+                const successMessage = isSingleRule ? 'Fab Inspector rule completed successfully!' : 'Fab Inspector completed successfully!';
+                vscode.window.showInformationMessage(successMessage);
 
-    // Check if the bundled executable exists
-    const executableExists = await checkBundledExecutable(executablePath);
-    if (!executableExists) {
-        vscode.window.showErrorMessage('PBIRInspectorCLI.exe not found. Please ensure the executable is bundled with the extension.');
-        cleanup?.(); // Call cleanup on error
-        return;
-    }
-
-    // Verify the temporary rules file exists before proceeding
-    if (!fs.existsSync(tempRulesFile)) {
-        vscode.window.showErrorMessage(`Temporary rules file not found: ${tempRulesFile}`);
-        cleanup?.(); // Call cleanup on error
-        return;
-    }
-
-    // Show progress indicator
-    vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: "Running Fab Inspector rule...",
-        cancellable: false
-    }, async (progress) => {
-        return new Promise<void>((resolve, reject) => {
-            // Construct command arguments
-            const args = [
-                '-fabricitem', fabricItemPath,
-                '-rules', tempRulesFile,
-                '-formats', formats
-            ];
-
-            console.log(`Running command: ${executablePath} ${args.join(' ')}`);
-            console.log(`Temp rules file exists: ${fs.existsSync(tempRulesFile)}`);
-            console.log(`Temp rules file content: ${fs.readFileSync(tempRulesFile, 'utf8')}`);
-
-            // Spawn the process
-            const process = spawn(executablePath, args, {
-                cwd: path.dirname(executablePath)
-            });
-
-            let stdout = '';
-            let stderr = '';
-
-            // Capture stdout
-            process.stdout.on('data', (data) => {
-                stdout += data.toString();
-            });
-
-            // Capture stderr
-            process.stderr.on('data', (data) => {
-                stderr += data.toString();
-            });
-
-            // Handle process completion
-            process.on('close', (code) => {
-                // Call cleanup after process completes
-                cleanup?.();
-
-                if (code === 0) {
-                    // Success
-                    vscode.window.showInformationMessage('Fab Inspector rule completed successfully!');
-
-                    // Show output in a new document if there's console output
-                    if (stdout && formats.includes('console')) {
-                        vscode.workspace.openTextDocument({
-                            content: stdout,
-                            language: 'plaintext'
-                        }).then(doc => {
-                            vscode.window.showTextDocument(doc);
-                        });
-                    }
-                } else {
-                    // Error
-                    const errorMessage = stderr || `Process exited with code ${code}`;
-                    vscode.window.showErrorMessage(`Fab Inspector rule failed: ${errorMessage}`);
-                    console.error('Fab Inspector stderr:', stderr);
-                    console.error('Fab Inspector stdout:', stdout);
+                if (channel) {
+                    channel.appendLine('\nFab Inspector completed successfully.');
                 }
-                resolve();
-            });
 
-            // Handle process error
-            process.on('error', (error) => {
-                // Call cleanup on process error
-                cleanup?.();
+                // Show output in a new document for single rule with console output
+                if (isSingleRule && stdout && formats.includes('console')) {
+                    vscode.workspace.openTextDocument({
+                        content: stdout,
+                        language: 'plaintext'
+                    }).then(doc => {
+                        vscode.window.showTextDocument(doc);
+                    });
+                }
+            } else {
+                // Error
+                const errorMessage = stderr || `Process exited with code ${code}`;
+                const failMessage = isSingleRule ? `Fab Inspector rule failed: ${errorMessage}` : `Fab Inspector failed with exit code: ${code}`;
+                vscode.window.showErrorMessage(failMessage);
 
-                vscode.window.showErrorMessage(`Failed to start Fab Inspector: ${error.message}`);
-                console.error('Process error:', error);
-                reject(error);
-            });
+                if (channel) {
+                    channel.appendLine(`\nFab Inspector failed with exit code: ${code}`);
+                }
+
+                console.error('Fab Inspector stderr:', stderr);
+                console.error('Fab Inspector stdout:', stdout);
+            }
+            resolve();
+        });
+
+        // Handle process errors
+        process.on('error', (error) => {
+            // Call cleanup on process error
+            cleanup?.();
+
+            const errorMsg = `Fab Inspector execution failed: ${error.message}. Please ensure the executable has proper permissions and dependencies are installed.`;
+            vscode.window.showErrorMessage(errorMsg);
+
+            if (channel) {
+                channel.appendLine(`\nError running Fab Inspector: ${error.message}`);
+            }
+
+            console.error('Process error:', error);
+            reject(error);
         });
     });
 }
