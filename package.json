@@ -30,6 +30,10 @@
       {
         "command": "fab-inspector.wrapWithLog",
         "title": "Fab Log"
+      },
+      {
+        "command": "fab-inspector.unwrapLog",
+        "title": "Fab Unlog"
       }
     ],
     "menus": {
@@ -38,16 +42,14 @@
           "command": "fab-inspector.wrapWithLog",
           "when": "editorHasSelection && editorLangId == json",
           "group": "fab-inspector"
+        },
+        {
+          "command": "fab-inspector.unwrapLog",
+          "when": "editorHasSelection && editorLangId == json",
+          "group": "fab-inspector"
         }
       ]
-    },
-    "keybindings": [
-      {
-        "command": "fab-inspector.wrapWithLog",
-        "key": "ctrl+shift+l",
-        "when": "editorTextFocus && editorHasSelection"
-      }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

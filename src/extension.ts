@@ -120,7 +120,55 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage('JSON fragment wrapped with log node and document formatted.');
     });
 
-    context.subscriptions.push(runFabInspectorCommand, wrapWithLogCommand);
+    // Register the command to unwrap log node
+    const unwrapLogCommand = vscode.commands.registerCommand('fab-inspector.unwrapLog', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage('No active editor found.');
+            return;
+        }
+
+        const selection = editor.selection;
+        if (selection.isEmpty) {
+            vscode.window.showErrorMessage('Please select a JSON fragment to unwrap log node.');
+            return;
+        }
+
+        const selectedText = editor.document.getText(selection);
+        
+        // Validate that the selected text is valid JSON
+        let parsedJson;
+        try {
+            parsedJson = JSON.parse(selectedText);
+        } catch (error) {
+            vscode.window.showErrorMessage('Selected text is not valid JSON.');
+            return;
+        }
+
+        // Check if the JSON has a "log" property
+        if (!parsedJson.hasOwnProperty('log')) {
+            vscode.window.showErrorMessage('Selected JSON does not contain a "log" node to unwrap.');
+            return;
+        }
+
+        // Extract the inner JSON from the log node
+        const innerJson = parsedJson.log;
+
+        // Format the unwrapped JSON with proper indentation
+        const formattedJson = JSON.stringify(innerJson, null, 2);
+
+        // Replace the selected text with the unwrapped version
+        await editor.edit(editBuilder => {
+            editBuilder.replace(selection, formattedJson);
+        });
+
+        // Format the entire document for nice indentation
+        await vscode.commands.executeCommand('editor.action.formatDocument');
+
+        vscode.window.showInformationMessage('Log node unwrapped and document formatted.');
+    });
+
+    context.subscriptions.push(runFabInspectorCommand, wrapWithLogCommand, unwrapLogCommand);
 }
 
 async function runFabInspector(context: vscode.ExtensionContext, rulesFile: string, formats: string) {
