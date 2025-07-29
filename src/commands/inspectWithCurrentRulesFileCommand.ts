@@ -3,10 +3,10 @@ import * as path from 'path';
 import { runFabInspector } from '../core/fabInspector';
 
 /**
- * Register and return the inspect current file command
+ * Register and return the inspect with current rules file command
  */
-export function registerInspectCurrentFileCommand(context: vscode.ExtensionContext): vscode.Disposable {
-    return vscode.commands.registerCommand('fab-inspector.inspectCurrentFile', async (uri?: vscode.Uri) => {
+export function registerInspectWithCurrentRulesFileCommand(context: vscode.ExtensionContext): vscode.Disposable {
+    return vscode.commands.registerCommand('fab-inspector.inspectWithCurrentRulesFile', async (uri?: vscode.Uri) => {
         // Get the file URI - either from context menu or active editor
         let fileUri = uri;
         if (!fileUri) {

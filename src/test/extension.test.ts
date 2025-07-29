@@ -39,7 +39,7 @@ suite('Fab Inspector Extension Test Suite', () => {
 			const commands = await vscode.commands.getCommands(true);
 			
 			assert.ok(commands.includes('fab-inspector.inspect'), 'fab-inspector.inspect command should be registered');
-			assert.ok(commands.includes('fab-inspector.inspectCurrentFile'), 'fab-inspector.inspectCurrentFile command should be registered');
+			assert.ok(commands.includes('fab-inspector.inspectWithCurrentRulesFile'), 'fab-inspector.inspectWithCurrentRulesFile command should be registered');
 			assert.ok(commands.includes('fab-inspector.wrapWithLog'), 'fab-inspector.wrapWithLog command should be registered');
 			assert.ok(commands.includes('fab-inspector.unwrapLog'), 'fab-inspector.unwrapLog command should be registered');
 			assert.ok(commands.includes('fab-inspector.runRule'), 'fab-inspector.runRule command should be registered');
@@ -324,7 +324,7 @@ suite('Fab Inspector Extension Test Suite', () => {
 		});
 
 		test('Should validate fab-inspector-rules folder requirement', () => {
-			// Test path validation logic for the inspect current file command
+			// Test path validation logic for the inspect with current rules file command
 			const mockWorkspacePath = 'C:\\workspace';
 			const validRulesPath = 'C:\\workspace\\fab-inspector-rules\\rules.json';
 			const invalidRulesPath = 'C:\\workspace\\other-folder\\rules.json';

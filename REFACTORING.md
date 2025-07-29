@@ -10,7 +10,7 @@ src/
 ├── extension.ts                    # Main entry point (32 lines)
 ├── commands/
 │   ├── inspectCommand.ts          # Main inspection command (58 lines)
-│   ├── inspectCurrentFileCommand.ts # Right-click inspect command (53 lines)
+│   ├── inspectWithCurrentRulesFileCommand.ts # Right-click inspect command (53 lines)
 │   ├── jsonCommands.ts            # JSON wrap/unwrap commands (94 lines)
 │   └── runRuleCommand.ts          # Single rule execution command (107 lines)
 ├── core/
@@ -33,7 +33,7 @@ src/
 
 ### 📋 **commands/** - Command Handlers
 - **inspectCommand.ts**: Full Fab Inspector execution with user input
-- **inspectCurrentFileCommand.ts**: Right-click Fab Inspector execution for current rules file
+- **inspectWithCurrentRulesFileCommand.ts**: Right-click Fab Inspector execution for current rules file
 - **jsonCommands.ts**: JSON wrapping and unwrapping utilities
 - **runRuleCommand.ts**: Single rule execution with temporary file management
 

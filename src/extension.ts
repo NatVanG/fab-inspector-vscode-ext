@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import { cleanupExistingTempFiles, deactivateCleanup } from './utils/fileUtils';
 import { registerInspectCommand } from './commands/inspectCommand';
-import { registerInspectCurrentFileCommand } from './commands/inspectCurrentFileCommand';
+import { registerInspectWithCurrentRulesFileCommand } from './commands/inspectWithCurrentRulesFileCommand';
 import { registerWrapWithLogCommand, registerUnwrapLogCommand } from './commands/jsonCommands';
 import { registerRunRuleCommand } from './commands/runRuleCommand';
 
@@ -24,12 +24,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register all commands
     const runFabInspectorCommand = registerInspectCommand(context);
-    const inspectCurrentFileCommand = registerInspectCurrentFileCommand(context);
+    const inspectWithCurrentRulesFileCommand = registerInspectWithCurrentRulesFileCommand(context);
     const wrapWithLogCommand = registerWrapWithLogCommand();
     const unwrapLogCommand = registerUnwrapLogCommand();
     const runRuleCommand = registerRunRuleCommand(context, outputChannel);
 
-    context.subscriptions.push(runFabInspectorCommand, inspectCurrentFileCommand, wrapWithLogCommand, unwrapLogCommand, runRuleCommand);
+    context.subscriptions.push(runFabInspectorCommand, inspectWithCurrentRulesFileCommand, wrapWithLogCommand, unwrapLogCommand, runRuleCommand);
 }
 
 // This method is called when your extension is deactivated

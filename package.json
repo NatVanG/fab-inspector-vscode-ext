@@ -28,7 +28,7 @@
         "title": "Fab Inspect"
       },
       {
-        "command": "fab-inspector.inspectCurrentFile",
+        "command": "fab-inspector.inspectWithCurrentRulesFile",
         "title": "Fab Inspect"
       },
       {
@@ -47,7 +47,7 @@
     "menus": {
       "editor/context": [
         {
-          "command": "fab-inspector.inspectCurrentFile",
+          "command": "fab-inspector.inspectWithCurrentRulesFile",
           "when": "editorLangId == json",
           "group": "fab-inspector@1"
         },
