@@ -110,8 +110,6 @@
     "license-csv": "npx license-checker --csv --out license-report.csv"
   },
   "devDependencies": {
-    "@types/adm-zip": "^0.5.7",
-    "@types/jsonpath": "^0.2.4",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.102.0",
@@ -141,14 +139,5 @@
   },
   "author": {
     "name": "Nat Van Gulck"
-  },
-  "activationEvents": [
-    "onCommand:fab-inspector.inspect",
-    "onCommand:fab-inspector.inspectWithCurrentRulesFile",
-    "onCommand:fab-inspector.wrapWithLog",
-    "onCommand:fab-inspector.unwrapLog",
-    "onCommand:fab-inspector.runRule",
-    "onCommand:fab-inspector.updateCli",
-    "onCommand:fab-inspector.cliInfo"
-  ]
+  }
 }

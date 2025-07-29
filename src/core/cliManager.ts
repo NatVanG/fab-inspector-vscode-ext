@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as https from 'https';
-import AdmZip = require('adm-zip');
+import AdmZip from 'adm-zip';
 
 export class CliManager {
     private readonly extensionPath: string;
