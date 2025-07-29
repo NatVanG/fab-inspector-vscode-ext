@@ -13,3 +13,5 @@ bin/.download-timestamp
 IMPLEMENTATION.md
 LICENSE_AUDIT_REPORT.md
 REFACTORING.md
+src/test/README-CliManager-Tests.md
+src/test/cliManager.integration.ts
