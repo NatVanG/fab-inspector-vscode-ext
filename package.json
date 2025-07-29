@@ -21,7 +21,7 @@
     "out/core/*",
     "out/utils/*",
     "out/extension.js",
-    "bin",
+    "bin/.keep",
     "icon.png",
     "README.md"
   ],
