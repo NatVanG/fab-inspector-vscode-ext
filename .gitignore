@@ -3,4 +3,8 @@ dist
 node_modules
 .vscode-test/
 *.vsix
-bin
+# Runtime downloaded CLI files (will be downloaded on demand)
+bin/win-x64/
+bin/cli-temp.zip
+bin/.download-timestamp
+IMPLEMENTATION.md

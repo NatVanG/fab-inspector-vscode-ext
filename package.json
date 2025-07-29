@@ -42,8 +42,31 @@
       {
         "command": "fab-inspector.runRule",
         "title": "Fab Run Rule"
+      },
+      {
+        "command": "fab-inspector.updateCli",
+        "title": "Fab Inspector: Update CLI"
+      },
+      {
+        "command": "fab-inspector.cliInfo",
+        "title": "Fab Inspector: Show CLI Info"
       }
     ],
+    "configuration": {
+      "title": "Fab Inspector",
+      "properties": {
+        "fabInspector.autoUpdateCli": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically check for and download CLI updates"
+        },
+        "fabInspector.cliUpdateInterval": {
+          "type": "number",
+          "default": 24,
+          "description": "Hours between CLI update checks (when auto-update is enabled)"
+        }
+      }
+    },
     "menus": {
       "editor/context": [
         {
@@ -78,6 +101,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
     "@types/jsonpath": "^0.2.4",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
@@ -90,6 +114,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "jsonpath": "^1.1.1"
   }
 }

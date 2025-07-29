@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { spawn } from 'child_process';
-import { checkBundledExecutable, getFabInspectorExecutablePath } from '../utils/fileUtils';
+import { ensureCliAvailable } from '../utils/fileUtils';
 
 /**
  * Run Fab Inspector with the provided parameters
@@ -22,17 +22,22 @@ export async function runFabInspector(context: vscode.ExtensionContext, fabricIt
         return;
     }
 
-    // Check if bundled executable is available
-    const executablePath = getFabInspectorExecutablePath(context);
-    const hasBundledExecutable = await checkBundledExecutable(executablePath);
+    try {
+        // Ensure CLI is available (download if necessary)
+        const executablePath = await ensureCliAvailable(context);
 
-    if (!hasBundledExecutable) {
-        vscode.window.showErrorMessage('Fab Inspector executable not found. Please ensure the extension is properly installed with the bundled executable.');
+        if (!fs.existsSync(executablePath)) {
+            vscode.window.showErrorMessage('Fab Inspector CLI could not be downloaded or is not available. Please check your internet connection and try again.');
+            cleanup?.();
+            return;
+        }
+
+        await runNativeCommand(executablePath, fabricItemPath, rulesPath, formats, cleanup, false);
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to run Fab Inspector: ${error}`);
         cleanup?.();
         return;
     }
-    
-    await runNativeCommand(executablePath, fabricItemPath, rulesPath, formats, cleanup, false);
 }
 
 /**

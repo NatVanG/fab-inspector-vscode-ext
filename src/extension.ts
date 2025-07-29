@@ -6,6 +6,7 @@ import { registerInspectCommand } from './commands/inspectCommand';
 import { registerInspectWithCurrentRulesFileCommand } from './commands/inspectWithCurrentRulesFileCommand';
 import { registerWrapWithLogCommand, registerUnwrapLogCommand } from './commands/jsonCommands';
 import { registerRunRuleCommand } from './commands/runRuleCommand';
+import { registerCliCommands } from './commands/cliCommands';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -28,8 +29,16 @@ export function activate(context: vscode.ExtensionContext) {
     const wrapWithLogCommand = registerWrapWithLogCommand();
     const unwrapLogCommand = registerUnwrapLogCommand();
     const runRuleCommand = registerRunRuleCommand(context, outputChannel);
+    const cliCommands = registerCliCommands(context);
 
-    context.subscriptions.push(runFabInspectorCommand, inspectWithCurrentRulesFileCommand, wrapWithLogCommand, unwrapLogCommand, runRuleCommand);
+    context.subscriptions.push(
+        runFabInspectorCommand, 
+        inspectWithCurrentRulesFileCommand, 
+        wrapWithLogCommand, 
+        unwrapLogCommand, 
+        runRuleCommand,
+        ...cliCommands
+    );
 }
 
 // This method is called when your extension is deactivated

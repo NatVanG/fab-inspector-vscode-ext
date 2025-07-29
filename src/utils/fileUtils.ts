@@ -2,16 +2,36 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as vscode from 'vscode';
+import { CliManager } from '../core/cliManager';
 
 /**
- * Get the path to the bundled executable
+ * Get the path to the bundled executable (legacy - will be replaced by CLI manager)
  */
 export function getFabInspectorExecutablePath(context: vscode.ExtensionContext): string {
     return path.join(context.extensionPath, 'bin', 'PBIRInspectorCLI.exe');
 }
 
 /**
- * Check if the bundled executable and its dependencies exist
+ * Get or create CLI manager instance
+ */
+let cliManagerInstance: CliManager | undefined;
+export function getCliManager(context: vscode.ExtensionContext): CliManager {
+    if (!cliManagerInstance) {
+        cliManagerInstance = new CliManager(context.extensionPath);
+    }
+    return cliManagerInstance;
+}
+
+/**
+ * Ensure CLI is available and return its path
+ */
+export async function ensureCliAvailable(context: vscode.ExtensionContext): Promise<string> {
+    const cliManager = getCliManager(context);
+    return await cliManager.ensureCliAvailable();
+}
+
+/**
+ * Check if the bundled executable and its dependencies exist (legacy - kept for compatibility)
  */
 export function checkBundledExecutable(executablePath: string): Promise<boolean> {
     return new Promise((resolve) => {
