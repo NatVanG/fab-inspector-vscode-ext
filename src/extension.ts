@@ -63,13 +63,50 @@ function findRuleById(documentText: string, ruleId: string): any | null {
     }
 }
 
+// Function to clean up any existing temporary files
+function cleanupExistingTempFiles(outputChannel: vscode.OutputChannel) {
+    try {
+        const tempDir = os.tmpdir();
+        const files = fs.readdirSync(tempDir);
+        const fabTempFiles = files.filter(file => file.startsWith('fab-inspector-temp-rule-'));
+        
+        if (fabTempFiles.length > 0) {
+            outputChannel.appendLine(`Found ${fabTempFiles.length} existing temp files to clean up`);
+            let cleanedCount = 0;
+            
+            for (const file of fabTempFiles) {
+                try {
+                    const filePath = path.join(tempDir, file);
+                    fs.unlinkSync(filePath);
+                    cleanedCount++;
+                } catch (error) {
+                    outputChannel.appendLine(`Failed to clean up existing temp file ${file}: ${error}`);
+                }
+            }
+            
+            outputChannel.appendLine(`Cleaned up ${cleanedCount} existing temp files`);
+        } else {
+            outputChannel.appendLine('No existing temp files found to clean up');
+        }
+    } catch (error) {
+        outputChannel.appendLine(`Error during temp file cleanup: ${error}`);
+    }
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
+    // Create an output channel for debugging
+    const outputChannel = vscode.window.createOutputChannel('Fab Inspector Debug');
+    
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "fab-inspector" is now active!');
+    outputChannel.appendLine('Congratulations, your extension "fab-inspector" is now active!');
+
+    // Clean up any existing temporary files from previous sessions
+    cleanupExistingTempFiles(outputChannel);
 
     // Register the command to run Fab Inspector
     const runFabInspectorCommand = vscode.commands.registerCommand('fab-inspector.inspect', async () => {
@@ -232,6 +269,7 @@ export function activate(context: vscode.ExtensionContext) {
         } catch (error) {
             // If not valid JSON, treat as rule ID and search for the rule
             console.log('Selected text not valid JSON, treating as rule ID:', selectedText);
+            outputChannel.appendLine(`Selected text not valid JSON, treating as rule ID: ${selectedText}`);
             
             // Remove quotes if the selected text is a quoted string
             const ruleId = selectedText.replace(/^["']|["']$/g, '');
@@ -243,6 +281,7 @@ export function activate(context: vscode.ExtensionContext) {
                     return;
                 }
                 console.log('Found rule by ID:', ruleId);
+                outputChannel.appendLine(`Found rule by ID: ${ruleId}`);
             } catch (findError) {
                 vscode.window.showErrorMessage(`Error finding rule: ${findError}`);
                 return;
@@ -296,29 +335,38 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             console.log(`Created temporary rules file: ${tempRulesFile}`);
+            outputChannel.appendLine(`Created temporary rules file: ${tempRulesFile}`);
 
             // Run Fab Inspector with the temporary rules file and cleanup callback
             await runFabInspector(context, workspaceFolder.uri.fsPath, tempRulesFile, formats, () => {
                 // Cleanup function to be called after the process completes
+                outputChannel.appendLine(`Cleanup callback called for: ${tempRulesFile}`);
                 if (tempRulesFile && fs.existsSync(tempRulesFile)) {
                     try {
                         fs.unlinkSync(tempRulesFile);
                         console.log(`Cleaned up temporary file: ${tempRulesFile}`);
+                        outputChannel.appendLine(`Successfully cleaned up temporary file: ${tempRulesFile}`);
                     } catch (cleanupError) {
                         console.warn(`Failed to cleanup temporary file: ${cleanupError}`);
+                        outputChannel.appendLine(`Failed to cleanup temporary file: ${cleanupError}`);
                     }
+                } else {
+                    outputChannel.appendLine(`Temporary file already deleted or doesn't exist: ${tempRulesFile}`);
                 }
             });
 
         } catch (error) {
             vscode.window.showErrorMessage(`Error running rule: ${error}`);
+            outputChannel.appendLine(`Error running rule: ${error}`);
             // Clean up on error
             if (tempRulesFile && fs.existsSync(tempRulesFile)) {
                 try {
                     fs.unlinkSync(tempRulesFile);
                     console.log(`Cleaned up temporary file after error: ${tempRulesFile}`);
+                    outputChannel.appendLine(`Cleaned up temporary file after error: ${tempRulesFile}`);
                 } catch (cleanupError) {
                     console.warn(`Failed to cleanup temporary file after error: ${cleanupError}`);
+                    outputChannel.appendLine(`Failed to cleanup temporary file after error: ${cleanupError}`);
                 }
             }
         }
@@ -351,23 +399,8 @@ async function runFabInspector(context: vscode.ExtensionContext, fabricItemPath:
         cleanup?.();
         return;
     }
-    // // Determine if this is a temporary file (single rule) or regular file
-    // const isTemporaryRule = rulesPath.includes('fab-inspector-temp-rule');
-    // const rulesFileName = path.basename(rulesPath);
-
-    // if (isTemporaryRule) {
-    //     // For single rule execution, show progress indicator
-    //     await vscode.window.withProgress({
-    //         location: vscode.ProgressLocation.Notification,
-    //         title: "Running Fab Inspector rule...",
-    //         cancellable: false
-    //     }, async (progress) => {
-    //         await runNativeCommand(executablePath, fabricItemPath, rulesPath, formats, cleanup, true);
-    //     });
-    // } else {
-        // For full inspection, show output channel
-        await runNativeCommand(executablePath, fabricItemPath, rulesPath, formats, cleanup, false);
-    //}
+    
+    await runNativeCommand(executablePath, fabricItemPath, rulesPath, formats, cleanup, false);
 }
 
 async function runNativeCommand(executablePath: string, fabricItemPath: string, rulesPath: string, formats: string, cleanup?: () => void, isSingleRule: boolean = false) {
@@ -405,6 +438,44 @@ async function runNativeCommand(executablePath: string, fabricItemPath: string, 
     const binDirectory = path.dirname(executablePath);
 
     return new Promise<void>((resolve, reject) => {
+        let isResolved = false;
+        
+        // Add a timeout to prevent hanging indefinitely
+        const timeout = setTimeout(() => {
+            if (!isResolved) {
+                isResolved = true;
+                console.log('Process timed out, calling cleanup...');
+                if (cleanup) {
+                    cleanup();
+                }
+                reject(new Error('Process timed out after 5 minutes'));
+            }
+        }, 5 * 60 * 1000); // 5 minute timeout
+
+        const cleanupAndResolve = (error?: Error) => {
+            if (isResolved) {
+                return;
+            }
+            isResolved = true;
+            
+            clearTimeout(timeout);
+            console.log('Cleaning up and resolving...');
+            
+            // Call cleanup
+            if (cleanup) {
+                console.log('Calling cleanup function...');
+                cleanup();
+            } else {
+                console.log('No cleanup function provided');
+            }
+            
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        };
+
         // Use spawn for real-time output streaming
         const process = spawn(executablePath, args, {
             cwd: binDirectory // Set working directory
@@ -433,9 +504,8 @@ async function runNativeCommand(executablePath: string, fabricItemPath: string, 
 
         // Handle process completion
         process.on('close', (code) => {
-            // Call cleanup after process completes
-            cleanup?.();
-
+            console.log(`Process closed with code: ${code}`);
+            
             if (code === 0) {
                 // Success
                 const successMessage = isSingleRule ? 'Fab Inspector rule completed successfully!' : 'Fab Inspector completed successfully!';
@@ -454,6 +524,8 @@ async function runNativeCommand(executablePath: string, fabricItemPath: string, 
                         vscode.window.showTextDocument(doc);
                     });
                 }
+                
+                cleanupAndResolve();
             } else {
                 // Error
                 const errorMessage = stderr || `Process exited with code ${code}`;
@@ -466,15 +538,21 @@ async function runNativeCommand(executablePath: string, fabricItemPath: string, 
 
                 console.error('Fab Inspector stderr:', stderr);
                 console.error('Fab Inspector stdout:', stdout);
+                
+                cleanupAndResolve(new Error(errorMessage));
             }
-            resolve();
+        });
+
+        // Handle process exit (different from close)
+        process.on('exit', (code) => {
+            console.log(`Process exited with code: ${code}`);
+            if (!isResolved) {
+                cleanupAndResolve();
+            }
         });
 
         // Handle process errors
         process.on('error', (error) => {
-            // Call cleanup on process error
-            cleanup?.();
-
             const errorMsg = `Fab Inspector execution failed: ${error.message}. Please ensure the executable has proper permissions and dependencies are installed.`;
             vscode.window.showErrorMessage(errorMsg);
 
@@ -483,10 +561,29 @@ async function runNativeCommand(executablePath: string, fabricItemPath: string, 
             }
 
             console.error('Process error:', error);
-            reject(error);
+            cleanupAndResolve(error);
         });
     });
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate() {
+    // Clean up any remaining temporary files when extension is deactivated
+    try {
+        const tempDir = os.tmpdir();
+        const files = fs.readdirSync(tempDir);
+        const fabTempFiles = files.filter(file => file.startsWith('fab-inspector-temp-rule-'));
+        
+        for (const file of fabTempFiles) {
+            try {
+                const filePath = path.join(tempDir, file);
+                fs.unlinkSync(filePath);
+                console.log(`Cleaned up temp file on deactivation: ${file}`);
+            } catch (error) {
+                console.warn(`Failed to clean up temp file on deactivation ${file}: ${error}`);
+            }
+        }
+    } catch (error) {
+        console.warn(`Error during deactivation cleanup: ${error}`);
+    }
+}
