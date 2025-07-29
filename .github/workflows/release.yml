@@ -27,6 +27,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Check licenses
+      run: npm run license-check
+
     - name: Update version if provided
       if: github.event.inputs.version
       run: |

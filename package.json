@@ -3,6 +3,7 @@
   "displayName": "Fab Inspector",
   "description": "Run Fab Inspector (aka PBI Inspector V2) against your Microsoft Fabric CI/CD items directly within VS Code!",
   "version": "0.0.1",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.102.0"
   },
@@ -98,7 +99,10 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "license-check": "node scripts/check-licenses.js",
+    "license-summary": "npx license-checker --summary",
+    "license-csv": "npx license-checker --csv --out license-report.csv"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",
@@ -111,6 +115,7 @@
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.25.1",
+    "license-checker": "^25.0.1",
     "typescript": "^5.8.3"
   },
   "dependencies": {

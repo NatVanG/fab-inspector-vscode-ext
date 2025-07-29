@@ -11,3 +11,5 @@ bin/Files/
 bin/cli-temp.zip
 bin/.download-timestamp
 IMPLEMENTATION.md
+LICENSE_AUDIT_REPORT.md
+REFACTORING.md
