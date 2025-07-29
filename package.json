@@ -126,9 +126,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/NatVanG/fab-inspector-vscode-ext.git"
+    "url": "https://github.com/NatVanG/fab-inspector-vscode-ext"
   },
-  "homepage": "https://github.com/NatVanG/fab-inspector-vscode-ext#readme",
+  "homepage": "https://github.com/NatVanG/fab-inspector-vscode-ext/blob/master/README.md",
   "galleryBanner": {
     "color": "#C80000",
     "theme": "dark"
