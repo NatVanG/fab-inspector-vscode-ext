@@ -16,7 +16,7 @@ export class CliManager {
     constructor(extensionPath: string) {
         this.extensionPath = extensionPath;
         this.cliDirectory = path.join(extensionPath, 'bin');
-        this.cliExecutable = path.join(this.cliDirectory, 'win-x64', 'CLI', 'PBIRInspectorCLI.exe');
+        this.cliExecutable = path.join(this.cliDirectory, 'PBIRInspectorCLI.exe');
         this.cliUrl = 'https://github.com/NatVanG/PBI-InspectorV2/releases/latest/download/win-x64-CLI.zip';
     }
 
@@ -50,7 +50,7 @@ export class CliManager {
             }
 
             // Check if Files folder exists (required dependency)
-            const filesFolder = path.join(path.dirname(this.cliExecutable), 'Files');
+            const filesFolder = path.join(this.cliDirectory, 'Files');
             if (!fs.existsSync(filesFolder)) {
                 return false;
             }
@@ -117,7 +117,33 @@ export class CliManager {
 
                     // Extract ZIP
                     const zip = new AdmZip(zipPath);
-                    zip.extractAllTo(this.cliDirectory, true);
+                    const entries = zip.getEntries();
+                    
+                    // Extract files from win-x64/CLI/ to bin root
+                    for (const entry of entries) {
+                        if (entry.entryName.startsWith('win-x64/CLI/') && !entry.entryName.includes('Files/')) {
+                            // Extract root CLI files (not in Files folder)
+                            if (!entry.isDirectory) {
+                                const fileName = path.basename(entry.entryName);
+                                const outputPath = path.join(this.cliDirectory, fileName);
+                                fs.writeFileSync(outputPath, entry.getData());
+                            }
+                        }
+                        // Extract Files folder and preserve its internal structure
+                        else if (entry.entryName.startsWith('win-x64/CLI/Files/')) {
+                            // Remove 'win-x64/CLI/' prefix to get 'Files/...' structure
+                            const relativePath = entry.entryName.replace('win-x64/CLI/', '');
+                            const outputPath = path.join(this.cliDirectory, relativePath);
+                            
+                            if (entry.isDirectory) {
+                                fs.mkdirSync(outputPath, { recursive: true });
+                            } else {
+                                // Ensure parent directory exists
+                                fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+                                fs.writeFileSync(outputPath, entry.getData());
+                            }
+                        }
+                    }
 
                     progress.report({ increment: 30, message: "Validating..." });
 
@@ -223,23 +249,25 @@ export class CliManager {
      */
     private async cleanupOldCliFiles(): Promise<void> {
         try {
-            // Delete all contents of the bin directory (files and subfolders)
-            if (fs.existsSync(this.cliDirectory)) {
-                for (const entry of fs.readdirSync(this.cliDirectory)) {
-                    const entryPath = path.join(this.cliDirectory, entry);
-                    if (fs.lstatSync(entryPath).isDirectory()) {
-                        fs.rmSync(entryPath, { recursive: true, force: true });
-                    } else {
-                        fs.unlinkSync(entryPath);
-                    }
+            // Clean up CLI files in bin root
+            const filesToClean = [
+                path.join(this.cliDirectory, 'PBIRInspectorCLI.exe'),
+                path.join(this.cliDirectory, 'libSkiaSharp.dll'),
+                path.join(this.cliDirectory, 'LICENSE'),
+                path.join(this.cliDirectory, 'cli-temp.zip')
+            ];
+
+            for (const file of filesToClean) {
+                if (fs.existsSync(file)) {
+                    fs.unlinkSync(file);
                 }
             }
 
-            // Also clean up the entire win-x64 directory if it exists
-            // const winx64Dir = path.join(this.cliDirectory, 'win-x64');
-            // if (fs.existsSync(winx64Dir)) {
-            //     fs.rmSync(winx64Dir, { recursive: true, force: true });
-            // }
+            // Clean up Files directory
+            const filesDir = path.join(this.cliDirectory, 'Files');
+            if (fs.existsSync(filesDir)) {
+                fs.rmSync(filesDir, { recursive: true, force: true });
+            }
         } catch (error) {
             console.warn('Error cleaning up old CLI files:', error);
         }
