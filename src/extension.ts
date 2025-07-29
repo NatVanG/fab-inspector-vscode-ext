@@ -5,6 +5,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { spawn } from 'child_process';
+const jsonpath = require('jsonpath');
 
 // Get the path to the bundled executable
 function getFabInspectorExecutablePath(context: vscode.ExtensionContext): string {
@@ -31,6 +32,35 @@ function checkBundledExecutable(executablePath: string): Promise<boolean> {
             });
         });
     });
+}
+
+// Function to find a rule by its ID in the document text
+function findRuleById(documentText: string, ruleId: string): any | null {
+    try {
+        // Parse the document as JSON
+        const documentJson = JSON.parse(documentText);
+        
+        // Use JsonPath to find rules with the matching ID
+        // This will search for any object with an "id" property matching ruleId
+        const matches = jsonpath.query(documentJson, `$..rules[?(@.id == "${ruleId}")]`);
+        
+        if (matches.length > 0) {
+            return matches[0]; // Return the first match
+        }
+        
+        // If no match found in rules array, try searching anywhere in the document
+        const globalMatches = jsonpath.query(documentJson, `$..[?(@.id == "${ruleId}")]`);
+        
+        if (globalMatches.length > 0) {
+            return globalMatches[0]; // Return the first match
+        }
+        
+        return null;
+        
+    } catch (error) {
+        console.log('Document is not valid JSON, cannot search for rule by ID');
+        return null;
+    }
 }
 
 // This method is called when your extension is activated
@@ -188,19 +218,35 @@ export function activate(context: vscode.ExtensionContext) {
 
         const selection = editor.selection;
         if (selection.isEmpty) {
-            vscode.window.showErrorMessage('Please select a rule JSON to run.');
+            vscode.window.showErrorMessage('Please select a rule ID or rule JSON to run.');
             return;
         }
 
-        const selectedText = editor.document.getText(selection);
-
-        // Validate that the selected text is valid JSON
+        const selectedText = editor.document.getText(selection).trim();
         let parsedRule;
+
+        // Try to parse as JSON first (complete rule selection)
         try {
             parsedRule = JSON.parse(selectedText);
+            console.log('Selected text parsed as complete rule JSON');
         } catch (error) {
-            vscode.window.showErrorMessage('Selected text is not valid JSON.');
-            return;
+            // If not valid JSON, treat as rule ID and search for the rule
+            console.log('Selected text not valid JSON, treating as rule ID:', selectedText);
+            
+            // Remove quotes if the selected text is a quoted string
+            const ruleId = selectedText.replace(/^["']|["']$/g, '');
+            
+            try {
+                parsedRule = findRuleById(editor.document.getText(), ruleId);
+                if (!parsedRule) {
+                    vscode.window.showErrorMessage(`No rule found with ID: "${ruleId}". Please ensure the rule exists in the current document.`);
+                    return;
+                }
+                console.log('Found rule by ID:', ruleId);
+            } catch (findError) {
+                vscode.window.showErrorMessage(`Error finding rule: ${findError}`);
+                return;
+            }
         }
 
         // Get the workspace folder
@@ -211,17 +257,19 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         // Prompt for output formats
-        const formats = await vscode.window.showInputBox({
-            placeHolder: 'Enter the output formats (e.g., json,html,console)',
-            prompt: 'Output Formats',
-            value: 'console', // Default to console output
-            validateInput: (value) => {
-                if (!value) {
-                    return 'Output formats cannot be empty.';
-                }
-                return null;
-            }
-        });
+        // const formats = await vscode.window.showInputBox({
+        //     placeHolder: 'Enter the output formats (e.g., json,html,console)',
+        //     prompt: 'Output Formats',
+        //     value: 'console', // Default to console output
+        //     validateInput: (value) => {
+        //         if (!value) {
+        //             return 'Output formats cannot be empty.';
+        //         }
+        //         return null;
+        //     }
+        // });
+
+        const formats = 'console'; // Default to console output for single rule execution
 
         if (!formats) {
             return;
@@ -303,8 +351,23 @@ async function runFabInspector(context: vscode.ExtensionContext, fabricItemPath:
         cleanup?.();
         return;
     }
-    // For full inspection, show output channel
-    await runNativeCommand(executablePath, fabricItemPath, rulesPath, formats, cleanup, false);
+    // // Determine if this is a temporary file (single rule) or regular file
+    // const isTemporaryRule = rulesPath.includes('fab-inspector-temp-rule');
+    // const rulesFileName = path.basename(rulesPath);
+
+    // if (isTemporaryRule) {
+    //     // For single rule execution, show progress indicator
+    //     await vscode.window.withProgress({
+    //         location: vscode.ProgressLocation.Notification,
+    //         title: "Running Fab Inspector rule...",
+    //         cancellable: false
+    //     }, async (progress) => {
+    //         await runNativeCommand(executablePath, fabricItemPath, rulesPath, formats, cleanup, true);
+    //     });
+    // } else {
+        // For full inspection, show output channel
+        await runNativeCommand(executablePath, fabricItemPath, rulesPath, formats, cleanup, false);
+    //}
 }
 
 async function runNativeCommand(executablePath: string, fabricItemPath: string, rulesPath: string, formats: string, cleanup?: () => void, isSingleRule: boolean = false) {
