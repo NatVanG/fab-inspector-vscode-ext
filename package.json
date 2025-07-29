@@ -21,10 +21,9 @@
     "out/core/*",
     "out/utils/*",
     "out/extension.js",
-    "bin/**/*",
+    "bin",
     "icon.png",
-    "README.md",
-    "LICENSE"
+    "README.md"
   ],
   "main": "./out/extension.js",
   "icon": "icon.png",
