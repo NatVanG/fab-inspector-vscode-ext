@@ -134,7 +134,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
 
         const formats = await vscode.window.showInputBox({
-            placeHolder: 'Enter the output formats (e.g., json,html,console)',
+            placeHolder: 'Enter the output formats (e.g., json,html,console,ADO,GitHub)',
             prompt: 'Output Formats',
             validateInput: (value) => {
                 if (!value) {
@@ -295,20 +295,7 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        // Prompt for output formats
-        // const formats = await vscode.window.showInputBox({
-        //     placeHolder: 'Enter the output formats (e.g., json,html,console)',
-        //     prompt: 'Output Formats',
-        //     value: 'console', // Default to console output
-        //     validateInput: (value) => {
-        //         if (!value) {
-        //             return 'Output formats cannot be empty.';
-        //         }
-        //         return null;
-        //     }
-        // });
-
-        const formats = 'console'; // Default to console output for single rule execution
+        const formats = 'GitHub'; // Default to GitHub output for clean output
 
         if (!formats) {
             return;
