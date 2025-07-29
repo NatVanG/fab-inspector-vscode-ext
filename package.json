@@ -20,6 +20,7 @@
     "out/commands/*",
     "out/core/*",
     "out/utils/*",
+    "out/extension.js",
     "bin/**/*",
     "icon.png",
     "README.md",
