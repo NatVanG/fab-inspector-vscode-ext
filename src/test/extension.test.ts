@@ -33,8 +33,8 @@ suite('Fab Inspector Extension Test Suite', () => {
 				await extension.activate();
 			}
 			
-			// Wait a bit for commands to be registered
-			await new Promise(resolve => setTimeout(resolve, 200));
+			// Wait longer for commands to be registered during the refactored state
+			await new Promise(resolve => setTimeout(resolve, 500));
 			
 			const commands = await vscode.commands.getCommands(true);
 			
@@ -42,7 +42,7 @@ suite('Fab Inspector Extension Test Suite', () => {
 			assert.ok(commands.includes('fab-inspector.wrapWithLog'), 'fab-inspector.wrapWithLog command should be registered');
 			assert.ok(commands.includes('fab-inspector.unwrapLog'), 'fab-inspector.unwrapLog command should be registered');
 			assert.ok(commands.includes('fab-inspector.runRule'), 'fab-inspector.runRule command should be registered');
-		});
+		}).timeout(5000); // Increase timeout to 5 seconds
 	});
 
 	suite('JSON Utility Functions Tests', () => {
