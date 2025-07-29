@@ -1,0 +1,58 @@
+import * as vscode from 'vscode';
+import * as path from 'path';
+import { runFabInspector } from '../core/fabInspector';
+
+/**
+ * Register and return the inspect current file command
+ */
+export function registerInspectCurrentFileCommand(context: vscode.ExtensionContext): vscode.Disposable {
+    return vscode.commands.registerCommand('fab-inspector.inspectCurrentFile', async (uri?: vscode.Uri) => {
+        // Get the file URI - either from context menu or active editor
+        let fileUri = uri;
+        if (!fileUri) {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showErrorMessage('No file is currently open.');
+                return;
+            }
+            fileUri = editor.document.uri;
+        }
+
+        // Validate that it's a JSON file
+        if (!fileUri.fsPath.toLowerCase().endsWith('.json')) {
+            vscode.window.showErrorMessage('The selected file must be a JSON rules file.');
+            return;
+        }
+
+        // Get the workspace folder from the file's location
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(fileUri);
+        if (!workspaceFolder) {
+            vscode.window.showErrorMessage('The file must be within a workspace folder.');
+            return;
+        }
+
+        // Validate that the file is within the fab-inspector-rules folder
+        const relativePath = path.relative(workspaceFolder.uri.fsPath, fileUri.fsPath);
+        const pathParts = relativePath.split(path.sep);
+        
+        if (pathParts.length < 2 || pathParts[0] !== 'fab-inspector-rules') {
+            vscode.window.showErrorMessage('The rules file must be located within the "fab-inspector-rules" folder in your workspace.');
+            return;
+        }
+
+        const fabricItemPath = workspaceFolder.uri.fsPath;
+        const rulesPath = fileUri.fsPath;
+        const formats = 'GitHub'; // Default to GitHub format as requested
+
+        try {
+            // Show info message about what's happening
+            const fileName = path.basename(rulesPath);
+            vscode.window.showInformationMessage(`Running Fab Inspector on "${fileName}" with GitHub output format...`);
+
+            // Run Fab Inspector with the current file
+            await runFabInspector(context, fabricItemPath, rulesPath, formats);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error running Fab Inspector: ${error}`);
+        }
+    });
+}

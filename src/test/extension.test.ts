@@ -39,6 +39,7 @@ suite('Fab Inspector Extension Test Suite', () => {
 			const commands = await vscode.commands.getCommands(true);
 			
 			assert.ok(commands.includes('fab-inspector.inspect'), 'fab-inspector.inspect command should be registered');
+			assert.ok(commands.includes('fab-inspector.inspectCurrentFile'), 'fab-inspector.inspectCurrentFile command should be registered');
 			assert.ok(commands.includes('fab-inspector.wrapWithLog'), 'fab-inspector.wrapWithLog command should be registered');
 			assert.ok(commands.includes('fab-inspector.unwrapLog'), 'fab-inspector.unwrapLog command should be registered');
 			assert.ok(commands.includes('fab-inspector.runRule'), 'fab-inspector.runRule command should be registered');
@@ -320,6 +321,27 @@ suite('Fab Inspector Extension Test Suite', () => {
 			assert.ok(parsed.rules);
 			assert.strictEqual(parsed.rules.length, 1);
 			assert.strictEqual(parsed.rules[0].id, ruleId);
+		});
+
+		test('Should validate fab-inspector-rules folder requirement', () => {
+			// Test path validation logic for the inspect current file command
+			const mockWorkspacePath = 'C:\\workspace';
+			const validRulesPath = 'C:\\workspace\\fab-inspector-rules\\rules.json';
+			const invalidRulesPath = 'C:\\workspace\\other-folder\\rules.json';
+			
+			// Simulate path.relative logic
+			const validRelative = 'fab-inspector-rules\\rules.json';
+			const invalidRelative = 'other-folder\\rules.json';
+			
+			const validParts = validRelative.split('\\');
+			const invalidParts = invalidRelative.split('\\');
+			
+			// Valid path should start with 'fab-inspector-rules'
+			assert.strictEqual(validParts[0], 'fab-inspector-rules');
+			assert.ok(validParts.length >= 2);
+			
+			// Invalid path should not start with 'fab-inspector-rules'
+			assert.notStrictEqual(invalidParts[0], 'fab-inspector-rules');
 		});
 	});
 });

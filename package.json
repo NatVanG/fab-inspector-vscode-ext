@@ -28,6 +28,10 @@
         "title": "Fab Inspect"
       },
       {
+        "command": "fab-inspector.inspectCurrentFile",
+        "title": "Fab Inspect"
+      },
+      {
         "command": "fab-inspector.wrapWithLog",
         "title": "Fab Log"
       },
@@ -43,19 +47,24 @@
     "menus": {
       "editor/context": [
         {
+          "command": "fab-inspector.inspectCurrentFile",
+          "when": "editorLangId == json",
+          "group": "fab-inspector@1"
+        },
+        {
           "command": "fab-inspector.wrapWithLog",
           "when": "editorHasSelection && editorLangId == json",
-          "group": "fab-inspector"
+          "group": "fab-inspector@2"
         },
         {
           "command": "fab-inspector.unwrapLog",
           "when": "editorHasSelection && editorLangId == json",
-          "group": "fab-inspector"
+          "group": "fab-inspector@3"
         },
         {
           "command": "fab-inspector.runRule",
           "when": "editorHasSelection && editorLangId == json",
-          "group": "fab-inspector"
+          "group": "fab-inspector@4"
         }
       ]
     }
