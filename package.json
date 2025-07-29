@@ -17,8 +17,11 @@
     "powerbi"
   ],
   "files": [
-    "out/**/*",
+    "out/commands/*",
+    "out/core/*",
+    "out/utils/*",
     "bin/**/*",
+    "icon.png",
     "README.md",
     "LICENSE"
   ],
