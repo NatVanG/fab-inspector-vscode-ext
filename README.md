@@ -2,30 +2,39 @@
 
 A comprehensive Visual Studio Code extension that provides seamless integration with Microsoft Fabric Inspector CLI, enabling developers to analyze, inspect, and work with Fabric inspection rules directly from their VS Code workspace.
 
+> **⚠️ Platform Support**: This extension currently supports **Windows only**. Support for macOS and Linux is planned for future releases.
+
 ## 🚀 Features
 
-### **📋 Fabric Inspection**
-- **Interactive Inspection**: Run comprehensive inspections with customizable output formats
-- **Right-Click Rules Execution**: Execute current rules file directly from the editor context menu
+### **📋 Fabric Inspection Commands**
+- **Fab Inspector: Run** - Interactive inspection with customizable output formats and full control
+- **Fab Inspector: Run Current Rules** - Quick execution of the currently open rules file  
+- **Fab Inspector: Run Selected Rule** - Execute individual rules for quick testing and validation
 - **Real-time Output**: Stream inspection results in real-time through VS Code's output panel
 - **Multiple Output Formats**: Generate reports in JSON, HTML, or console formats
 
-### **🔧 JSON Rule Management**
-- **JSON Wrap/Unwrap**: Easily wrap JSON fragments with log nodes or remove them
-- **Single Rule Testing**: Execute individual rules for quick testing and validation
-- **Smart Rule Finding**: Automatically locate rules by ID anywhere in your JSON documents
+### **🔧 JSON Rule Debug Commands**
+- **Fab Inspector: Log Wrap** - Wrap selected JSON fragments with log nodes for debugging
+- **Fab Inspector: Log Unwrap** - Remove log wrapper nodes from JSON, extracting inner content
 
-### **📁 Workspace Integration**
+### **�️ CLI Management Commands**
+- **Fab Inspector: Update CLI** - Manually download and update the Fab Inspector CLI
+- **Fab Inspector: Show CLI Info** - Display current CLI version and status information
+
+### **�📁 Workspace Integration**
 - **Rules Folder Support**: Organize rules in the `fab-inspector-rules` folder
-- **Path Validation**: Automatic validation of rules file locations
-- **Temporary File Management**: Safe handling of temporary files with automatic cleanup
 
 ## 📋 Requirements
 
-### **Essential Dependencies**
-- **Visual Studio Code**: Version 1.74.0 or higher
-- **PBIRInspectorCLI.exe**: Included in the extension's `bin/` folder
-- **JSON Language Support**: Built-in VS Code JSON language features
+### **Platform Requirements**
+- **Operating System**: Windows (64-bit)
+- **Visual Studio Code**: Version 1.102.0 or higher
+- **Internet Connection**: Required for CLI downloads and updates
+
+### **Fabric Inspector CLI**
+- **Automatic Download**: CLI is automatically downloaded when first needed
+- **Version Management**: Configurable CLI version selection (latest or specific versions)
+- **Update Management**: Optional auto-updates with configurable intervals
 
 ### **Workspace Setup**
 - **fab-inspector-rules folder**: Create this folder in your workspace root for rules files
@@ -35,16 +44,16 @@ A comprehensive Visual Studio Code extension that provides seamless integration 
 
 ### **1. Command Palette Operations**
 
-#### **Fab Inspect (Interactive)**
+#### **Fab Inspector: Run** (Interactive)
 The main inspection command that provides full control over the inspection process.
 
 **How to use:**
-1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
-2. Type and select `Fab Inspect`
+1. Open Command Palette (`Ctrl+Shift+P`)
+2. Type and select `Fab Inspector: Run`
 3. Follow the interactive prompts:
    - **Select Rules File**: Choose from available `.json` files in your `fab-inspector-rules` folder
    - **Select Output Format**: Choose between `json`, `html`, or `console`
-   - **Select Fabric File**: Pick the target file to inspect
+   - **Select Fabric Item**: Pick the target Fabric item to inspect
 4. View results in the "Fab Inspector" output channel
 
 **Example workflow:**
@@ -54,20 +63,44 @@ The main inspection command that provides full control over the inspection proce
 │   ├── basic-rules.json
 │   ├── advanced-rules.json
 │   └── custom-validations.json
-├── 📁 fabric-files/
-│   ├── report.pbix
-│   └── dataset.pbix
+├── 📁 fabric-items/
+│   ├── 📁 MyReport.Report/
+│   │   ├── report.json
+│   │   └── definition.pbir
+│   ├── 📁 SalesDataset.Dataset/
+│   │   ├── model.bim
+│   │   └── definition.pbir
+│   └── 📁 ETLPipeline.DataPipeline/
+│       ├── pipeline.json
+│       └── definition.pbir
 ```
+
+#### **Fab Inspector: Update CLI**
+Manually download and update the Fab Inspector CLI to the latest version.
+
+**How to use:**
+1. Open Command Palette (`Ctrl+Shift+P`)
+2. Type and select `Fab Inspector: Update CLI`
+3. The extension will download and install the latest CLI version
+4. View progress and results in the "Fab Inspector" output channel
+
+#### **Fab Inspector: Show CLI Info**
+Display information about the current CLI installation and version.
+
+**How to use:**
+1. Open Command Palette (`Ctrl+Shift+P`)
+2. Type and select `Fab Inspector: Show CLI Info`
+3. View CLI version, status, and configuration details
 
 ### **2. Right-Click Context Menu Operations**
 
-#### **Fab Inspect (Current Rules File)**
+#### **Fab Inspector: Run Current Rules**
 Quickly execute the currently open rules file without additional prompts.
 
 **How to use:**
 1. Open a JSON rules file from your `fab-inspector-rules` folder
 2. Right-click anywhere in the editor
-3. Select `Fab Inspect` from the context menu
+3. Select `Fab Inspector: Run Current Rules` from the context menu
 4. The extension will automatically execute the current rules file with GitHub-compatible output format
 
 **Requirements:**
@@ -75,39 +108,37 @@ Quickly execute the currently open rules file without additional prompts.
 - File must have a `.json` extension
 - File must contain valid JSON content
 
-#### **Fab Log (JSON Wrapping)**
+#### **Fab Inspector: Log Wrap** (JSON Wrapping)
 Wrap selected JSON fragments with a log node for debugging or enhanced logging.
 
 **How to use:**
 1. Select a valid JSON fragment in your editor
 2. Right-click the selection
-3. Choose `Fab Log`
+3. Choose `Fab Inspector: Log Wrap`
 4. The selected JSON will be wrapped with a `log` node
 
 **Example:**
 ```json
 // Before (selected):
 {
-  "id": "rule-001",
-  "condition": true
+  "var": "visual.VisualType"
 }
 
 // After wrapping:
 {
   "log": {
-    "id": "rule-001", 
-    "condition": true
+    "var": "visual.VisualType"
   }
 }
 ```
 
-#### **Fab Unlog (JSON Unwrapping)**
+#### **Fab Inspector: Log Unwrap** (JSON Unwrapping)
 Remove log wrapper nodes from JSON, extracting the inner content.
 
 **How to use:**
 1. Select a JSON object that contains a `log` node
 2. Right-click the selection
-3. Choose `Fab Unlog`
+3. Choose `Fab Inspector: Log Unwrap`
 4. The log wrapper will be removed, leaving only the inner JSON
 
 **Example:**
@@ -115,41 +146,24 @@ Remove log wrapper nodes from JSON, extracting the inner content.
 // Before (selected):
 {
   "log": {
-    "id": "rule-001",
-    "condition": true
+    "var": "visual.VisualType"
   }
 }
 
 // After unwrapping:
 {
-  "id": "rule-001",
-  "condition": true
+  "var": "visual.VisualType"
 }
 ```
 
-#### **Fab Run Rule (Single Rule Testing)**
+#### **Fab Inspector: Run Selected Rule** (Single Rule Testing)
 Execute individual rules for quick testing and validation.
 
 **How to use:**
 1. Select a complete rule definition in your JSON editor
 2. Right-click the selection
-3. Choose `Fab Run Rule`
+3. Choose `Fab Inspector: Run Selected Rule`
 4. The extension will create a temporary rules file and execute just that rule
-
-**Example rule selection:**
-```json
-{
-  "id": "test-rule-001",
-  "name": "Sample Validation Rule",
-  "description": "Validates data model structure",
-  "logic": {
-    "and": [
-      {"var": "hasValidSchema"},
-      {"==": [{"var": "version"}, "1.0"]}
-    ]
-  }
-}
-```
 
 ### **3. Workspace Organization Best Practices**
 
@@ -160,41 +174,37 @@ your-workspace/
 │   ├── 📄 basic-validations.json    # ✅ Valid rules file
 │   ├── 📄 performance-rules.json    # ✅ Valid rules file  
 │   └── 📄 security-checks.json      # ✅ Valid rules file
-├── 📁 fabric-files/                 # Your fabric files to inspect
-│   ├── 📄 report1.pbix
-│   └── 📄 dataset1.pbix
+├── 📁 fabric-items/                 # Your Fabric items to inspect
+│   ├── 📁 SalesReport.Report/
+│   │   ├── 📄 report.json
+│   │   ├── 📄 definition.pbir
+│   │   └── 📄 metadata.json
+│   ├── 📁 CustomerDataset.Dataset/
+│   │   ├── 📄 model.bim
+│   │   ├── 📄 definition.pbir
+│   │   └── 📄 relationships.json
+│   ├── 📁 ETLPipeline.DataPipeline/
+│   │   ├── 📄 pipeline.json
+│   │   ├── 📄 definition.pbir
+│   │   └── 📄 activities.json
+│   └── 📁 AnalyticsDB.SQLDatabase/
+│       ├── 📄 database.json
+│       ├── 📄 definition.pbir
+│       └── 📁 tables/
+│           ├── 📄 customers.json
+│           └── 📄 orders.json
 └── 📁 documentation/                 # Optional documentation
     └── 📄 inspection-guide.md
 ```
 
 #### **Rules File Format**
-Your JSON rules files should follow this structure:
+Your JSON rules files should follow the structure defined by the Fab Inspector (PBI Inspector V2) project. 
 
-```json
-{
-  "rules": [
-    {
-      "id": "unique-rule-id",
-      "name": "Human Readable Rule Name",
-      "description": "What this rule validates",
-      "category": "validation-category", 
-      "severity": "error|warning|info",
-      "logic": {
-        // JSON Logic expression
-        "and": [
-          {"var": "someProperty"},
-          {">": [{"var": "numericValue"}, 0]}
-        ]
-      }
-    }
-  ],
-  "metadata": {
-    "version": "1.0",
-    "author": "Your Name",
-    "created": "2025-01-15"
-  }
-}
-```
+**📚 Rule Creation Resources:**
+- **Main Repository**: [PBI Inspector V2](https://github.com/NatVanG/PBI-InspectorV2) - Official Fab Inspector CLI repository
+- **Documentation Wiki**: [PBI Inspector V2 Wiki](https://github.com/NatVanG/PBI-InspectorV2/wiki) - Comprehensive rule creation guide
+- **Rule Examples**: Browse the repository for sample rules and validation logic
+- **JSON Logic Reference**: Learn about JSON Logic syntax used in rule definitions
 
 ### **4. Advanced Usage Scenarios**
 
@@ -202,179 +212,67 @@ Your JSON rules files should follow this structure:
 Test multiple rules in sequence:
 
 1. Create individual rule files for different validation categories
-2. Use the interactive `Fab Inspect` command to test each category
+2. Use the interactive `Fab Inspector: Run` command to test each category
 3. Compare results across different output formats
 
 #### **Rule Development Workflow**
 Efficient workflow for developing and testing rules:
 
 1. **Create Rule**: Write your rule in the `fab-inspector-rules` folder
-2. **Test Individual Rule**: Select the rule and use `Fab Run Rule`
+2. **Test Individual Rule**: Select the rule and use `Fab Inspector: Run Selected Rule`
 3. **Refine Logic**: Edit and re-test using the right-click execution
-4. **Full Integration Test**: Use `Fab Inspect` to test with complete rule set
+4. **Full Integration Test**: Use `Fab Inspector: Run` to test with complete rule set
 5. **Validate Output**: Check different output formats (JSON, HTML, console)
 
 #### **JSON Logic Development**
 Use the wrap/unwrap features for JSON Logic development:
 
 1. **Develop Logic**: Create complex JSON Logic expressions
-2. **Add Logging**: Use `Fab Log` to wrap expressions for debugging
-3. **Test Logic**: Execute wrapped logic with `Fab Run Rule`
-4. **Clean Output**: Use `Fab Unlog` to remove debug wrappers
+2. **Add Logging**: Use `Fab Inspector: Log Wrap` to wrap expressions for debugging
+3. **Test Logic**: Execute wrapped logic with `Fab Inspector: Run Selected Rule`
+4. **Clean Output**: Use `Fab Inspector: Log Unwrap` to remove debug wrappers
 
 ## 🔧 Extension Settings
 
-This extension does not contribute additional VS Code settings. All configuration is handled through:
+This extension contributes the following settings to VS Code:
 
-- **Command Palette interactions**: Interactive prompts guide you through options
-- **File organization**: Rules placement in the `fab-inspector-rules` folder
-- **Context menu availability**: Commands appear based on file type and selection context
-
-## ⚙️ Technical Details
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `fabInspector.autoUpdateCli` | boolean | `true` | Automatically check for and download CLI updates |
+| `fabInspector.cliUpdateInterval` | number | `24` | Hours between CLI update checks (when auto-update is enabled) |
+| `fabInspector.cliVersion` | string | `"latest"` | Version of the Fab Inspector CLI to download. Use 'latest' for the most recent release, or specify a version tag like 'v2.4.3' |
 
 ### **Command Reference**
-| Command | Trigger | Context | Description |
-|---------|---------|---------|-------------|
-| `Fab Inspect` | Command Palette | Any time | Interactive inspection with full options |
-| `Fab Inspect` | Right-click | JSON files in rules folder | Quick execution of current rules file |
-| `Fab Log` | Right-click | JSON selection | Wrap JSON fragment with log node |
-| `Fab Unlog` | Right-click | JSON selection | Remove log wrapper from JSON |
-| `Fab Run Rule` | Right-click | JSON rule selection | Execute single rule for testing |
+| Command | ID | Trigger | Context | Description |
+|---------|-----|---------|---------|-------------|
+| `Fab Inspector: Run` | `fab-inspector.inspect` | Command Palette | Any time | Interactive inspection with full options |
+| `Fab Inspector: Run Current Rules` | `fab-inspector.inspectWithCurrentRulesFile` | Right-click | JSON files in rules folder | Quick execution of current rules file |
+| `Fab Inspector: Run Selected Rule` | `fab-inspector.runRule` | Right-click | JSON rule selection | Execute single rule for testing |
+| `Fab Inspector: Log Wrap` | `fab-inspector.wrapWithLog` | Right-click | JSON selection | Wrap JSON fragment with log node |
+| `Fab Inspector: Log Unwrap` | `fab-inspector.unwrapLog` | Right-click | JSON selection | Remove log wrapper from JSON |
+| `Fab Inspector: Update CLI` | `fab-inspector.updateCli` | Command Palette | Any time | Manually update CLI to latest version |
+| `Fab Inspector: Show CLI Info` | `fab-inspector.cliInfo` | Command Palette | Any time | Display CLI version and status |
 
 ### **File Processing**
-- **Temporary Files**: Created in system temp directory with prefix `fab-inspector-temp-rule-`
+- **Temporary Files**: Created in secure workspace-specific directory (`.vscode/fab-inspector-temp/`)
 - **Automatic Cleanup**: All temporary files are cleaned up after execution
-- **Path Validation**: Ensures rules files are in the correct workspace location
+- **Path Validation**: Ensures rules files are in the correct workspace location with security checks
 - **JSON Validation**: Validates JSON syntax before processing
+- **Security Hardening**: Protection against path traversal and command injection attacks
+
+### **CLI Management**
+- **Auto-Download**: CLI is automatically downloaded when first needed
+- **Version Control**: Support for specific CLI versions or latest release
+- **Update Notifications**: Optional automatic update checks with configurable intervals
+- **Secure Downloads**: CLI binaries downloaded with integrity verification
+- **Process Management**: Safe process spawning and termination
 
 ### **Output Formats**
 - **JSON**: Structured output suitable for programmatic processing
 - **HTML**: Rich formatted output with styling and interactive elements  
 - **Console**: Plain text output optimized for terminal viewing
 - **GitHub**: Default format for right-click operations, optimized for GitHub integration
-
-## 📚 Examples
-
-### **Example 1: Basic Rule Validation**
-
-**Scenario**: Validate that all reports have required metadata
-
-**rules/metadata-validation.json:**
-```json
-{
-  "rules": [
-    {
-      "id": "require-title",
-      "name": "Report Must Have Title",
-      "description": "Ensures all reports include a title property",
-      "severity": "error",
-      "logic": {
-        "and": [
-          {"var": "title"},
-          {">": [{"strlen": {"var": "title"}}, 0]}
-        ]
-      }
-    },
-    {
-      "id": "require-author", 
-      "name": "Report Must Have Author",
-      "description": "Ensures all reports specify an author",
-      "severity": "warning",
-      "logic": {
-        "var": "author"
-      }
-    }
-  ]
-}
-```
-
-**Usage:**
-1. Save the above as `metadata-validation.json` in your `fab-inspector-rules` folder
-2. Open Command Palette → `Fab Inspect`
-3. Select `metadata-validation.json` → Choose output format → Select target file
-4. View validation results
-
-### **Example 2: Single Rule Testing**
-
-**Scenario**: Test a complex validation rule before adding it to your rule set
-
-**Steps:**
-1. Create your rule in a JSON file:
-```json
-{
-  "id": "performance-check",
-  "name": "Performance Validation",
-  "description": "Checks if query execution time is within acceptable limits", 
-  "logic": {
-    "and": [
-      {"var": "executionTime"},
-      {"<": [{"var": "executionTime"}, 5000]},
-      {">": [{"var": "executionTime"}, 0]}
-    ]
-  }
-}
-```
-
-2. Select the entire rule object
-3. Right-click → `Fab Run Rule`  
-4. Review execution results to validate logic
-5. Refine the rule as needed
-
-### **Example 3: JSON Logic Development with Wrapping**
-
-**Scenario**: Develop complex JSON Logic with debugging
-
-**Initial Logic:**
-```json
-{
-  "and": [
-    {"var": "isActive"},
-    {">": [{"var": "userCount"}, 10]}
-  ]
-}
-```
-
-**Add Debugging (select logic, right-click → Fab Log):**
-```json
-{
-  "log": {
-    "and": [
-      {"var": "isActive"}, 
-      {">": [{"var": "userCount"}, 10]}
-    ]
-  }
-}
-```
-
-**Test wrapped logic with Fab Run Rule, then remove wrapper (Fab Unlog) when ready**
-
-### **Example 4: Workspace Setup for Team Development**
-
-**Project Structure:**
-```
-fabric-validation-project/
-├── 📁 fab-inspector-rules/
-│   ├── 📄 00-core-validations.json      # Basic structural checks
-│   ├── 📄 01-performance-rules.json     # Performance validations  
-│   ├── 📄 02-security-checks.json       # Security-related rules
-│   ├── 📄 03-business-logic.json        # Domain-specific validations
-│   └── 📄 99-experimental-rules.json    # Rules under development
-├── 📁 test-data/
-│   ├── 📄 sample-report.pbix
-│   ├── 📄 test-dataset.pbix
-│   └── 📄 validation-cases.pbix
-├── 📁 documentation/
-│   ├── 📄 rule-development-guide.md
-│   └── 📄 validation-standards.md
-└── 📄 README.md
-```
-
-**Team Workflow:**
-1. **Rule Development**: Each team member works on numbered rule files
-2. **Individual Testing**: Use `Fab Run Rule` for quick rule validation
-3. **Integration Testing**: Use `Fab Inspect` to test complete rule sets
-4. **Code Review**: Share rule files through version control
-5. **Documentation**: Maintain standards in documentation folder
+- **ADO**: Default format for right-click operations, optimized for ADO integration
 
 ## 🐛 Troubleshooting
 
@@ -393,35 +291,57 @@ fabric-validation-project/
 #### **"Rule execution failed"**
 - ✅ Verify rule has valid JSON Logic syntax
 - ✅ Check that required properties (`id`, `logic`) are present
-- ✅ Ensure PBIRInspectorCLI.exe is accessible in the extension's bin folder
+- ✅ Ensure CLI is properly downloaded and accessible
+
+#### **"CLI download failed"**
+- ✅ Check internet connection
+- ✅ Verify Windows firewall/antivirus isn't blocking downloads
+- ✅ Try manually updating CLI using `Fab Inspector: Update CLI` command
+- ✅ Check VS Code output panel for detailed error messages
 
 #### **"Temporary file errors"**
-- ✅ Check system temp directory permissions
+- ✅ Check workspace permissions for `.vscode` folder creation
 - ✅ Restart VS Code to clear any locked temporary files
-- ✅ Verify sufficient disk space in temp directory
+- ✅ Verify sufficient disk space in workspace directory
 
 ### **Performance Tips**
 
 - **Large Rule Sets**: Split complex rule sets into multiple files for easier management
-- **Quick Testing**: Use `Fab Run Rule` for rapid iteration during development
-- **Output Format**: Use `console` format for fastest execution, `html` for detailed analysis
+- **Quick Testing**: Use `Fab Inspector: Run Selected Rule` for rapid iteration during development
+- **Output Format**: Use `console` format for fastest execution, `html` for visual output
 - **File Organization**: Keep frequently used rules in easily accessible files
+- **CLI Updates**: Keep CLI up-to-date or specify 'latest' version in the extension settings for best performance and latest features
 
 ## 🔄 Known Issues and Limitations
 
 ### **Current Limitations**
-- **CLI Dependency**: Requires PBIRInspectorCLI.exe to be present in the extension's bin folder
+- **Platform Support**: Windows only
+- **CLI Dependency**: Requires internet connection for initial CLI download
 - **JSON Only**: Rules files must be valid JSON (JSONC/comments not supported)
-- **Windows Paths**: Optimized for Windows file paths (cross-platform compatibility in development)
-- **Single File Execution**: Right-click inspection works with one rules file at a time
-
-### **Future Enhancements**
-- **Rule Intellisense**: JSON Schema validation and autocomplete for rule files
-- **Cross-Platform Support**: Enhanced compatibility for macOS and Linux
-- **Rule Templates**: Pre-built rule templates for common validation scenarios
-- **Batch Processing**: Execute multiple rules files in sequence
 
 ## 📝 Release Notes
+
+### **0.0.2** - Current Release
+- ✨ **New Features**:
+  - **CLI Management Commands**: Added `Fab Inspector: Update CLI` and `Fab Inspector: Show CLI Info` commands
+  - **Automatic CLI Downloads**: CLI is now automatically downloaded when first needed
+  - **Configurable CLI Versions**: Support for specific CLI versions or latest release
+  - **Auto-Update System**: Optional automatic CLI updates with configurable intervals
+  - **Security Hardening**: Enhanced security with path validation and injection prevention
+  - **Improved Process Management**: Better CLI process handling and cleanup
+  - **Singleton Output Channel**: Prevents multiple output channels from being created
+
+- 🔧 **Technical Improvements**:
+  - **Secure Temporary Directories**: Files created in workspace-specific secure locations
+  - **CLI Process Shutdown**: Proper cleanup of running CLI processes
+  - **Enhanced Error Handling**: Better error messages and troubleshooting information
+  - **Unit Test Coverage**: Comprehensive test suite with 85+ test cases
+  - **Type Safety**: Improved TypeScript implementation with strict typing
+
+- ⚠️ **Breaking Changes**:
+  - **Windows Only**: This release explicitly supports Windows only (macOS/Linux support planned)
+  - **CLI Download Required**: Initial internet connection required for CLI download
+  - **Configuration Changes**: New settings for CLI management and auto-updates
 
 ### **0.0.1** - Initial Release
 - ✨ **New Features**:
@@ -449,6 +369,6 @@ fabric-validation-project/
 If you encounter issues or have suggestions for improvements, please:
 - Check the troubleshooting section above
 - Review the examples for usage guidance  
-- Report issues through the VS Code extension feedback system
+- Report issues through the VS Code extension feedback system or through the extension repository issues log
 
 **🎉 Enjoy inspecting and validating your Fabric items with enhanced productivity!**

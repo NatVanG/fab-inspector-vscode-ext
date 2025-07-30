@@ -2,7 +2,7 @@
   "name": "fab-inspector",
   "displayName": "Fab Inspector",
   "description": "Inspect Microsoft Fabric CI/CD items directly within VS Code!",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "NatVanG",
   "license": "MIT",
   "engines": {
@@ -23,34 +23,32 @@
     "out/extension.js",
     "bin/.keep",
     "icon.png",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "main": "./out/extension.js",
-  "activationEvents": [
-    "*"
-  ],
   "icon": "icon.png",
   "contributes": {
     "commands": [
       {
         "command": "fab-inspector.inspect",
-        "title": "Fab Inspect"
+        "title": "Fab Inspector: Run"
       },
       {
         "command": "fab-inspector.inspectWithCurrentRulesFile",
-        "title": "Fab Inspect"
-      },
-      {
-        "command": "fab-inspector.wrapWithLog",
-        "title": "Fab Log"
-      },
-      {
-        "command": "fab-inspector.unwrapLog",
-        "title": "Fab Unlog"
+        "title": "Fab Inspector: Run Current Rules"
       },
       {
         "command": "fab-inspector.runRule",
-        "title": "Fab Run Rule"
+        "title": "Fab Inspector: Run Selected Rule"
+      },
+      {
+        "command": "fab-inspector.wrapWithLog",
+        "title": "Fab Inspector: Log Wrap"
+      },
+      {
+        "command": "fab-inspector.unwrapLog",
+        "title": "Fab Inspector: Log Unwrap"
       },
       {
         "command": "fab-inspector.updateCli",
@@ -89,17 +87,17 @@
           "group": "fab-inspector@1"
         },
         {
-          "command": "fab-inspector.wrapWithLog",
+          "command": "fab-inspector.runRule",
           "when": "editorHasSelection && editorLangId == json",
           "group": "fab-inspector@2"
         },
         {
-          "command": "fab-inspector.unwrapLog",
+          "command": "fab-inspector.wrapWithLog",
           "when": "editorHasSelection && editorLangId == json",
           "group": "fab-inspector@3"
         },
         {
-          "command": "fab-inspector.runRule",
+          "command": "fab-inspector.unwrapLog",
           "when": "editorHasSelection && editorLangId == json",
           "group": "fab-inspector@4"
         }
