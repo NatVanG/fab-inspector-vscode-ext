@@ -30,16 +30,16 @@ export function registerInspectCommand(context: vscode.ExtensionContext): vscode
             }
         });
 
-        const formats = await vscode.window.showInputBox({
-            placeHolder: 'Enter the output formats (e.g., json,html,console,ADO,GitHub)',
-            prompt: 'Output Formats',
-            validateInput: (value) => {
-                if (!value) {
-                    return 'Output formats cannot be empty.';
-                }
-                return null;
-            }
+        let formats = await vscode.window.showInputBox({
+            placeHolder: 'Enter the output format (e.g. JSON, HTML, Console, GitHub, ADO).',
+            prompt: 'Output Formats'
         });
+
+        // Check if formats include JSON, HTML, or Console; if not, default to Console
+        const allowedFormats = ['JSON', 'HTML', 'Console', 'GitHub', 'ADO'];
+        if (!formats || !allowedFormats.some(fmt => (formats ?? '').toUpperCase().includes(fmt))) {
+            formats = 'Console';
+        }
 
         // Run Fab Inspector with the provided inputs
         if (rulesFile && formats) {
