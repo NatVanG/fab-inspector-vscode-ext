@@ -17,7 +17,8 @@ export class CliManager {
         this.extensionPath = extensionPath;
         this.cliDirectory = path.join(extensionPath, 'bin');
         this.cliExecutable = path.join(this.cliDirectory, 'PBIRInspectorCLI.exe');
-        this.cliUrl = 'https://github.com/NatVanG/PBI-InspectorV2/releases/latest/download/win-x64-CLI.zip';
+        //this.cliUrl = 'https://github.com/NatVanG/PBI-InspectorV2/releases/latest/download/win-x64-CLI.zip';
+        this.cliUrl = 'https://github.com/NatVanG/PBI-InspectorV2/releases/download/v2.4.3/win-x64-CLI.zip';
     }
 
     /**
