@@ -1,8 +1,8 @@
 {
   "name": "fab-inspector",
   "displayName": "Fab Inspector",
-  "description": "Run Fab Inspector (aka PBI Inspector V2) against your Microsoft Fabric CI/CD items directly within VS Code!",
-  "version": "0.0.1",
+  "description": "Inspect Microsoft Fabric CI/CD items directly within VS Code!",
+  "version": "0.0.2",
   "publisher": "NatVanG",
   "license": "MIT",
   "engines": {
@@ -70,6 +70,11 @@
           "type": "number",
           "default": 24,
           "description": "Hours between CLI update checks (when auto-update is enabled)"
+        },
+        "fabInspector.cliVersion": {
+          "type": "string",
+          "default": "latest",
+          "description": "Version of the Fab Inspector CLI to download. Use 'latest' for the most recent release, or specify a version tag like 'v2.4.3'"
         }
       }
     },

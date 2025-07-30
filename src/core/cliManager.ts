@@ -9,7 +9,6 @@ export class CliManager {
     private readonly extensionPath: string;
     private readonly cliDirectory: string;
     private readonly cliExecutable: string;
-    private readonly cliUrl: string;
     private readonly maxRetries: number = 3;
     private readonly cacheValidityHours: number = 24;
 
@@ -17,8 +16,20 @@ export class CliManager {
         this.extensionPath = extensionPath;
         this.cliDirectory = path.join(extensionPath, 'bin');
         this.cliExecutable = path.join(this.cliDirectory, 'PBIRInspectorCLI.exe');
-        //this.cliUrl = 'https://github.com/NatVanG/PBI-InspectorV2/releases/latest/download/win-x64-CLI.zip';
-        this.cliUrl = 'https://github.com/NatVanG/PBI-InspectorV2/releases/download/v2.4.3/win-x64-CLI.zip';
+    }
+
+    /**
+     * Gets the CLI download URL based on the configured version
+     */
+    private getCliUrl(): string {
+        const config = vscode.workspace.getConfiguration('fabInspector');
+        const version = config.get<string>('cliVersion', 'latest');
+        
+        if (version === 'latest') {
+            return 'https://github.com/NatVanG/PBI-InspectorV2/releases/latest/download/win-x64-CLI.zip';
+        } else {
+            return `https://github.com/NatVanG/PBI-InspectorV2/releases/download/${version}/win-x64-CLI.zip`;
+        }
     }
 
     /**
@@ -112,7 +123,7 @@ export class CliManager {
                     progress.report({ increment: 10, message: "Downloading..." });
 
                     const zipPath = path.join(this.cliDirectory, 'cli-temp.zip');
-                    await this.downloadFile(this.cliUrl, zipPath);
+                    await this.downloadFile(this.getCliUrl(), zipPath);
 
                     progress.report({ increment: 50, message: "Extracting..." });
 
@@ -285,11 +296,16 @@ export class CliManager {
     /**
      * Gets CLI information
      */
-    public getCliInfo(): { exists: boolean; path: string; lastModified?: Date } {
+    public getCliInfo(): { exists: boolean; path: string; lastModified?: Date; version: string; downloadUrl: string } {
         const exists = fs.existsSync(this.cliExecutable);
-        const info: { exists: boolean; path: string; lastModified?: Date } = {
+        const config = vscode.workspace.getConfiguration('fabInspector');
+        const version = config.get<string>('cliVersion', 'latest');
+        
+        const info: { exists: boolean; path: string; lastModified?: Date; version: string; downloadUrl: string } = {
             exists,
-            path: this.cliExecutable
+            path: this.cliExecutable,
+            version: version,
+            downloadUrl: this.getCliUrl()
         };
 
         if (exists) {
