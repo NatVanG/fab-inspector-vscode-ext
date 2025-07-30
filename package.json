@@ -26,6 +26,9 @@
     "README.md"
   ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "*"
+  ],
   "icon": "icon.png",
   "contributes": {
     "commands": [
@@ -115,6 +118,7 @@
     "license-csv": "npx license-checker --csv --out license-report.csv"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.102.0",

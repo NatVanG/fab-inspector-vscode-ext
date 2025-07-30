@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { spawn } from 'child_process';
 import { ensureCliAvailable } from '../utils/fileUtils';
+import { getOutputChannel } from '../utils/outputChannel';
 
 /**
  * Run Fab Inspector with the provided parameters
@@ -46,11 +47,11 @@ export async function runFabInspector(context: vscode.ExtensionContext, fabricIt
 export async function runNativeCommand(executablePath: string, fabricItemPath: string, rulesPath: string, formats: string, cleanup?: () => void, isSingleRule: boolean = false) {
     const rulesFileName = path.basename(rulesPath);
 
-    // Create output channel for full inspection mode
+    // Use singleton output channel for full inspection mode
     let channel: vscode.OutputChannel | undefined;
     if (!isSingleRule) {
         vscode.window.showInformationMessage(`Running Fab Inspector with rules file "${rulesFileName}"...`);
-        channel = vscode.window.createOutputChannel('Fab Inspector');
+        channel = getOutputChannel();
         channel.clear();
         channel.show();
         channel.appendLine('Starting Fab Inspector...');

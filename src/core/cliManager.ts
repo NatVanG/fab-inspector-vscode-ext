@@ -3,7 +3,9 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as https from 'https';
+import * as cp from 'child_process';
 import AdmZip from 'adm-zip';
+import { getOutputChannel } from '../utils/outputChannel';
 
 export class CliManager {
     private readonly extensionPath: string;
@@ -16,6 +18,30 @@ export class CliManager {
         this.extensionPath = extensionPath;
         this.cliDirectory = path.join(extensionPath, 'bin');
         this.cliExecutable = path.join(this.cliDirectory, 'PBIRInspectorCLI.exe');
+    }
+
+    /**
+     * Logs a message to both console and output channel
+     */
+    private log(message: string): void {
+        console.log(message);
+        getOutputChannel().appendLine(message);
+    }
+
+    /**
+     * Logs a warning to both console and output channel
+     */
+    private logWarn(message: string): void {
+        console.warn(message);
+        getOutputChannel().appendLine(`WARNING: ${message}`);
+    }
+
+    /**
+     * Logs an error to both console and output channel
+     */
+    private logError(message: string): void {
+        console.error(message);
+        getOutputChannel().appendLine(`ERROR: ${message}`);
     }
 
     /**
@@ -81,7 +107,7 @@ export class CliManager {
                     const cacheExpired = Date.now() - downloadTime > cacheValidityMs;
 
                     if (cacheExpired) {
-                        console.log('CLI cache expired, will download fresh version');
+                        this.log('CLI cache expired, will download fresh version');
                         return false;
                     }
                 }
@@ -89,8 +115,72 @@ export class CliManager {
 
             return true;
         } catch (error) {
-            console.error('Error checking CLI validity:', error);
+            this.logError(`Error checking CLI validity: ${error}`);
             return false;
+        }
+    }
+
+    /**
+     * Forces shutdown of any running CLI processes
+     */
+    private async forceShutdownCli(): Promise<void> {
+        try {
+            const processName = 'PBIRInspectorCLI.exe';
+            
+            // Use tasklist to check if the process is running
+            const checkProcess = cp.spawn('tasklist', ['/FI', `IMAGENAME eq ${processName}`, '/FO', 'CSV'], {
+                windowsHide: true
+            });
+
+            let output = '';
+            checkProcess.stdout.on('data', (data) => {
+                output += data.toString();
+            });
+
+            await new Promise<void>((resolve, reject) => {
+                checkProcess.on('close', (code) => {
+                    if (code === 0) {
+                        // Check if process is found in output
+                        if (output.includes(processName)) {
+                            this.log(`Found running ${processName} process, attempting to terminate...`);
+                            
+                            // Force kill the process
+                            const killProcess = cp.spawn('taskkill', ['/F', '/IM', processName], {
+                                windowsHide: true
+                            });
+
+                            killProcess.on('close', (killCode) => {
+                                if (killCode === 0) {
+                                    this.log(`Successfully terminated ${processName}`);
+                                } else {
+                                    this.logWarn(`Failed to terminate ${processName}, exit code: ${killCode}`);
+                                }
+                                // Wait a moment for the process to fully terminate
+                                setTimeout(resolve, 1000);
+                            });
+
+                            killProcess.on('error', (error) => {
+                                this.logWarn(`Error terminating ${processName}: ${error}`);
+                                resolve(); // Continue anyway
+                            });
+                        } else {
+                            this.log(`No running ${processName} process found`);
+                            resolve();
+                        }
+                    } else {
+                        this.logWarn(`Failed to check for running ${processName} process, exit code: ${code}`);
+                        resolve(); // Continue anyway
+                    }
+                });
+
+                checkProcess.on('error', (error) => {
+                    this.logWarn(`Error checking for running ${processName} process: ${error}`);
+                    resolve(); // Continue anyway
+                });
+            });
+        } catch (error) {
+            this.logWarn(`Error in forceShutdownCli: ${error}`);
+            // Don't throw - we want the download to continue even if shutdown fails
         }
     }
 
@@ -112,6 +202,10 @@ export class CliManager {
                         message: `Downloading CLI... ${retryCount > 0 ? `(attempt ${retryCount + 1}/${this.maxRetries})` : ''}`
                     });
 
+                    // Force shutdown any running CLI processes first
+                    progress.report({ increment: 5, message: "Shutting down running processes..." });
+                    await this.forceShutdownCli();
+
                     // Ensure bin directory exists
                     if (!fs.existsSync(this.cliDirectory)) {
                         fs.mkdirSync(this.cliDirectory, { recursive: true });
@@ -120,10 +214,14 @@ export class CliManager {
                     // Clean up any existing CLI files
                     await this.cleanupOldCliFiles();
 
-                    progress.report({ increment: 10, message: "Downloading..." });
+                    const cliUrl = this.getCliUrl();
+
+                    progress.report({ increment: 10, message: `Downloading...` });
+
+                    this.log(`Downloading CLI from ${cliUrl}`);
 
                     const zipPath = path.join(this.cliDirectory, 'cli-temp.zip');
-                    await this.downloadFile(this.getCliUrl(), zipPath);
+                    await this.downloadFile(cliUrl, zipPath);
 
                     progress.report({ increment: 50, message: "Extracting..." });
 
@@ -178,7 +276,7 @@ export class CliManager {
 
                 } catch (error) {
                     retryCount++;
-                    console.error(`CLI download attempt ${retryCount} failed:`, error);
+                    this.logError(`CLI download attempt ${retryCount} failed: ${error}`);
 
                     if (retryCount >= this.maxRetries) {
                         const errorMessage = `Failed to download CLI after ${this.maxRetries} attempts: ${error}`;
@@ -281,7 +379,7 @@ export class CliManager {
                 fs.rmSync(filesDir, { recursive: true, force: true });
             }
         } catch (error) {
-            console.warn('Error cleaning up old CLI files:', error);
+            this.logWarn(`Error cleaning up old CLI files: ${error}`);
         }
     }
 
@@ -289,6 +387,7 @@ export class CliManager {
      * Forces a CLI update by invalidating the cache
      */
     public async forceUpdate(): Promise<string> {
+        await this.forceShutdownCli();
         await this.cleanupOldCliFiles();
         return this.downloadCli().then(() => this.cliExecutable);
     }
