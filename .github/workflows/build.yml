@@ -41,8 +41,11 @@ jobs:
     - name: Install vsce (VS Code Extension Manager)
       run: npm install -g @vscode/vsce
 
+    - name: List files in workspace
+      run: ls -R ${{ github.workspace }}
+
     - name: Package extension
-      run: vsce package --allow-unused-files-patterns
+      run: vsce package
 
     - name: Get package info
       run:  vsce ls --tree
