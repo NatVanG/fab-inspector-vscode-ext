@@ -3,7 +3,7 @@
   "displayName": "Fab Inspector",
   "description": "Run Fab Inspector (aka PBI Inspector V2) against your Microsoft Fabric CI/CD items directly within VS Code!",
   "version": "0.0.1",
-  "publisher": "Nat Van Gulck",
+  "publisher": "NatVanG",
   "license": "MIT",
   "engines": {
     "vscode": "^1.102.0"
