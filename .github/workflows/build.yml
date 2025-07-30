@@ -42,7 +42,10 @@ jobs:
       run: npm install -g @vscode/vsce
 
     - name: Package extension
-      run: vsce package
+      run: vsce package --allow-unused-files-patterns
+
+    - name: Get package info
+      run:  vsce ls --tree
 
     - name: Upload VSIX artifact
       uses: actions/upload-artifact@v4
