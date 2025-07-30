@@ -92,7 +92,9 @@ export class SecurityUtils {
         }
         
         // Remove any path components - only allow filename
-        const baseName = path.basename(fileName);
+        // Use a regex to extract the base filename, handling both Windows and POSIX separators
+        const baseNameMatch = fileName.match(/([^\\/]+)$/);
+        const baseName = baseNameMatch ? baseNameMatch[1] : fileName;
         
         // Only allow alphanumeric, hyphens, underscores, and periods
         if (!/^[a-zA-Z0-9\-_.]+\.json$/.test(baseName)) {
