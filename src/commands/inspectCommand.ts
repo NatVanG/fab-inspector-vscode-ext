@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { runFabInspector } from '../core/fabInspector';
+import { SecurityUtils } from '../utils/securityUtils';
 
 /**
  * Register and return the main Fab Inspector command
@@ -23,10 +24,12 @@ export function registerInspectCommand(context: vscode.ExtensionContext): vscode
                 if (!value) {
                     return 'Rules file path cannot be empty.';
                 }
-                if (!value.endsWith('.json')) {
-                    return 'Rules file must be a JSON file.';
+                try {
+                    SecurityUtils.validateRulesFileName(value);
+                    return null;
+                } catch (error) {
+                    return error instanceof Error ? error.message : 'Invalid file name format';
                 }
-                return null;
             }
         });
 

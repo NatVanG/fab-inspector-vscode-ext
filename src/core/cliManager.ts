@@ -6,6 +6,7 @@ import * as https from 'https';
 import * as cp from 'child_process';
 import AdmZip from 'adm-zip';
 import { getOutputChannel } from '../utils/outputChannel';
+import { SecurityUtils } from '../utils/securityUtils';
 
 export class CliManager {
     private readonly extensionPath: string;
@@ -51,10 +52,13 @@ export class CliManager {
         const config = vscode.workspace.getConfiguration('fabInspector');
         const version = config.get<string>('cliVersion', 'latest');
         
-        if (version === 'latest') {
+        // Validate version to prevent URL manipulation
+        const safeVersion = SecurityUtils.validateCliVersion(version);
+        
+        if (safeVersion === 'latest') {
             return 'https://github.com/NatVanG/PBI-InspectorV2/releases/latest/download/win-x64-CLI.zip';
         } else {
-            return `https://github.com/NatVanG/PBI-InspectorV2/releases/download/${version}/win-x64-CLI.zip`;
+            return `https://github.com/NatVanG/PBI-InspectorV2/releases/download/${safeVersion}/win-x64-CLI.zip`;
         }
     }
 

@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { findRuleById } from '../utils/jsonUtils';
 import { runFabInspector } from '../core/fabInspector';
+import { SecurityUtils } from '../utils/securityUtils';
 
 /**
  * Register and return the run rule command
@@ -67,8 +68,8 @@ export function registerRunRuleCommand(context: vscode.ExtensionContext, outputC
         let tempRulesFile: string = '';
 
         try {
-            // Create temporary rules file
-            const tempDir = os.tmpdir();
+            // Create temporary rules file using secure temp directory
+            const tempDir = SecurityUtils.createSecureTempDir();
             tempRulesFile = path.join(tempDir, `fab-inspector-temp-rule-${Date.now()}.json`);
 
             // Wrap the rule in a rules array

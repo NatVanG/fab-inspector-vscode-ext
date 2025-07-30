@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { spawn } from 'child_process';
 import { ensureCliAvailable } from '../utils/fileUtils';
 import { getOutputChannel } from '../utils/outputChannel';
+import { SecurityUtils } from '../utils/securityUtils';
 
 /**
  * Run Fab Inspector with the provided parameters
@@ -45,35 +46,51 @@ export async function runFabInspector(context: vscode.ExtensionContext, fabricIt
  * Execute the native Fab Inspector command
  */
 export async function runNativeCommand(executablePath: string, fabricItemPath: string, rulesPath: string, formats: string, cleanup?: () => void, isSingleRule: boolean = false) {
-    const rulesFileName = path.basename(rulesPath);
+    try {
+        // Security validation: Validate and sanitize all inputs
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        
+        // Validate file paths
+        const safeFabricItemPath = SecurityUtils.validateFilePath(fabricItemPath, workspaceRoot);
+        const safeRulesPath = SecurityUtils.validateFilePath(rulesPath, workspaceRoot);
+        
+        // Validate file extensions
+        if (!SecurityUtils.validateFileExtension(safeRulesPath, ['.json'])) {
+            throw new Error('Rules file must have .json extension');
+        }
+        
+        // Sanitize format string
+        const safeFormats = SecurityUtils.sanitizeCommandArg(formats);
+        
+        const rulesFileName = path.basename(safeRulesPath);
 
-    // Use singleton output channel for full inspection mode
-    let channel: vscode.OutputChannel | undefined;
-    if (!isSingleRule) {
-        vscode.window.showInformationMessage(`Running Fab Inspector with rules file "${rulesFileName}"...`);
-        channel = getOutputChannel();
-        channel.clear();
-        channel.show();
-        channel.appendLine('Starting Fab Inspector...');
-        channel.appendLine(`Executable: ${executablePath}`);
-        channel.appendLine(`Fabric Item Path: ${fabricItemPath}`);
-        channel.appendLine(`Rules File: ${rulesPath}`);
-        channel.appendLine(`Formats: ${formats}`);
-        channel.appendLine('');
-    }
+        // Use singleton output channel for full inspection mode
+        let channel: vscode.OutputChannel | undefined;
+        if (!isSingleRule) {
+            vscode.window.showInformationMessage(`Running Fab Inspector with rules file "${rulesFileName}"...`);
+            channel = getOutputChannel();
+            channel.clear();
+            channel.show();
+            channel.appendLine('Starting Fab Inspector...');
+            channel.appendLine(`Executable: ${executablePath}`);
+            channel.appendLine(`Fabric Item Path: ${safeFabricItemPath}`);
+            channel.appendLine(`Rules File: ${safeRulesPath}`);
+            channel.appendLine(`Formats: ${safeFormats}`);
+            channel.appendLine('');
+        }
 
-    // Build command arguments
-    const args = [
-        '-fabricitem', fabricItemPath,
-        '-rules', rulesPath,
-        '-formats', formats
-    ];
+        // Build command arguments with validated inputs
+        const args = [
+            '-fabricitem', safeFabricItemPath,
+            '-rules', safeRulesPath,
+            '-formats', safeFormats
+        ];
 
-    console.log(`Running command: ${executablePath} ${args.join(' ')}`);
-    if (isSingleRule) {
-        console.log(`Temp rules file exists: ${fs.existsSync(rulesPath)}`);
-        console.log(`Temp rules file content: ${fs.readFileSync(rulesPath, 'utf8')}`);
-    }
+        console.log(`Running command: ${executablePath} ${args.join(' ')}`);
+        if (isSingleRule) {
+            console.log(`Temp rules file exists: ${fs.existsSync(safeRulesPath)}`);
+            console.log(`Temp rules file content: ${fs.readFileSync(safeRulesPath, 'utf8')}`);
+        }
 
     // Set working directory to the bin folder so the executable can find its Files folder
     const binDirectory = path.dirname(executablePath);
@@ -205,4 +222,9 @@ export async function runNativeCommand(executablePath: string, fabricItemPath: s
             cleanupAndResolve(error);
         });
     });
+    } catch (error) {
+        vscode.window.showErrorMessage(`Security validation failed: ${error}`);
+        cleanup?.();
+        throw error;
+    }
 }
