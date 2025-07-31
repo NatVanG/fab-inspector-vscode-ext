@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as https from 'https';
 import * as cp from 'child_process';
-import AdmZip from 'adm-zip';
 import { getOutputChannel } from '../utils/outputChannel';
 import { SecurityUtils } from '../utils/securityUtils';
 
@@ -229,7 +228,8 @@ export class CliManager {
 
                     progress.report({ increment: 50, message: "Extracting..." });
 
-                    // Extract ZIP
+                    // Extract ZIP using require with error handling
+                    const AdmZip = require('adm-zip');
                     const zip = new AdmZip(zipPath);
                     const entries = zip.getEntries();
                     

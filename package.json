@@ -21,6 +21,7 @@
     "out/core/*.js",
     "out/utils/*.js",
     "out/extension.js",
+    "node_modules/adm-zip/**",
     "bin/.keep",
     "icon.png",
     "README.md",
@@ -129,8 +130,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "adm-zip": "^0.5.16",
-    "jsonpath": "^1.1.1"
+    "adm-zip": "^0.5.16"
   },
   "repository": {
     "type": "git",
