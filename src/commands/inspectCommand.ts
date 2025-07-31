@@ -34,13 +34,21 @@ export function registerInspectCommand(context: vscode.ExtensionContext): vscode
         });
 
         let formats = await vscode.window.showInputBox({
-            placeHolder: 'Enter the output format (e.g. JSON, HTML, Console, GitHub, ADO).',
-            prompt: 'Output Formats'
+            placeHolder: 'Enter the output format: Console (default), JSON, HTML, GitHub, ADO.',
+            prompt: 'Output Formats',
+            validateInput: (value) => {
+            const allowedFormats = ['JSON', 'HTML', 'Console', 'GitHub', 'ADO'];
+            if (!value || value.trim() === '') {
+                return null; // Allow empty, will default to Console
+            }
+            const input = value.trim().toLowerCase();
+            if (!allowedFormats.map(f => f.toLowerCase()).includes(input)) {
+                return `Format must be one of: ${allowedFormats.join(', ')}`;
+            }
+            return null;
+            }
         });
-
-        // Check if formats include JSON, HTML, or Console; if not, default to Console
-        const allowedFormats = ['JSON', 'HTML', 'Console', 'GitHub', 'ADO'];
-        if (!formats || !allowedFormats.some(fmt => (formats ?? '').toUpperCase().includes(fmt))) {
+        if (!formats || formats.trim() === '') {
             formats = 'Console';
         }
 

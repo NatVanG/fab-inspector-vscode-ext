@@ -23,7 +23,8 @@
     "out/extension.js",
     "bin/.keep",
     "icon.png",
-    "README.md"
+    "README.md",
+    "LICENSE.txt"
   ],
   "main": "./out/extension.js",
   "icon": "icon.png",
