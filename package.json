@@ -77,6 +77,11 @@
           "type": "string",
           "default": "latest",
           "description": "Version of the Fab Inspector CLI to download. Use 'latest' for the most recent release, or specify a version tag like 'v2.4.3'"
+        },
+        "fabInspector.rulesFolderName": {
+          "type": "string",
+          "default": "fab-inspector-rules",
+          "description": "Name of the folder to create for storing Fab Inspector rules. Must be a valid folder name (alphanumeric, hyphens, underscores only)."
         }
       }
     },

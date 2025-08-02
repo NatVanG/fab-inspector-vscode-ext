@@ -59,7 +59,7 @@ export function registerRunRuleCommand(context: vscode.ExtensionContext, outputC
             return;
         }
 
-        const formats = 'GitHub'; // Default to GitHub output for clean output
+        const formats = 'Console';
 
         if (!formats) {
             return;
@@ -85,24 +85,16 @@ export function registerRunRuleCommand(context: vscode.ExtensionContext, outputC
                 throw new Error('Failed to create temporary rules file');
             }
 
-            console.log(`Created temporary rules file: ${tempRulesFile}`);
-            outputChannel.appendLine(`Created temporary rules file: ${tempRulesFile}`);
-
             // Run Fab Inspector with the temporary rules file and cleanup callback
             await runFabInspector(context, workspaceFolder.uri.fsPath, tempRulesFile, formats, () => {
                 // Cleanup function to be called after the process completes
-                outputChannel.appendLine(`Cleanup callback called for: ${tempRulesFile}`);
                 if (tempRulesFile && fs.existsSync(tempRulesFile)) {
                     try {
                         fs.unlinkSync(tempRulesFile);
-                        console.log(`Cleaned up temporary file: ${tempRulesFile}`);
-                        outputChannel.appendLine(`Successfully cleaned up temporary file: ${tempRulesFile}`);
                     } catch (cleanupError) {
                         console.warn(`Failed to cleanup temporary file: ${cleanupError}`);
                         outputChannel.appendLine(`Failed to cleanup temporary file: ${cleanupError}`);
                     }
-                } else {
-                    outputChannel.appendLine(`Temporary file already deleted or doesn't exist: ${tempRulesFile}`);
                 }
             });
 
@@ -113,8 +105,6 @@ export function registerRunRuleCommand(context: vscode.ExtensionContext, outputC
             if (tempRulesFile && fs.existsSync(tempRulesFile)) {
                 try {
                     fs.unlinkSync(tempRulesFile);
-                    console.log(`Cleaned up temporary file after error: ${tempRulesFile}`);
-                    outputChannel.appendLine(`Cleaned up temporary file after error: ${tempRulesFile}`);
                 } catch (cleanupError) {
                     console.warn(`Failed to cleanup temporary file after error: ${cleanupError}`);
                     outputChannel.appendLine(`Failed to cleanup temporary file after error: ${cleanupError}`);

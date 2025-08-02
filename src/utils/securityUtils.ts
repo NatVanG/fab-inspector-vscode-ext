@@ -103,4 +103,65 @@ export class SecurityUtils {
         
         return baseName;
     }
+
+    /**
+     * Validates and sanitizes folder names to ensure they are safe for local file system
+     */
+    static validateFolderName(folderName: string): string {
+        if (!folderName || typeof folderName !== 'string') {
+            throw new Error('Folder name must be a non-empty string');
+        }
+
+        // Trim whitespace
+        const trimmed = folderName.trim();
+        
+        if (trimmed.length === 0) {
+            throw new Error('Folder name cannot be empty or only whitespace');
+        }
+
+        // Check for path traversal attempts
+        if (trimmed.includes('..') || trimmed.includes('/') || trimmed.includes('\\')) {
+            throw new Error('Folder name cannot contain path separators or traversal sequences');
+        }
+
+        // Check for reserved Windows names (case-insensitive)
+        const reservedNames = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
+        if (reservedNames.includes(trimmed.toUpperCase())) {
+            throw new Error(`Folder name '${trimmed}' is a reserved system name`);
+        }
+
+        // Check for invalid characters (Windows and Unix combined)
+        const invalidChars = /[<>:"|?*\x00-\x1f]/;
+        if (invalidChars.test(trimmed)) {
+            throw new Error('Folder name contains invalid characters. Only alphanumeric characters, hyphens, underscores, and spaces are allowed.');
+        }
+
+        // Check length (Windows has 255 char limit for file names)
+        if (trimmed.length > 100) {
+            throw new Error('Folder name is too long. Maximum 100 characters allowed.');
+        }
+
+        // Only allow safe characters: alphanumeric, hyphens, underscores, spaces
+        if (!/^[a-zA-Z0-9\-_ ]+$/.test(trimmed)) {
+            throw new Error('Folder name can only contain letters, numbers, hyphens, underscores, and spaces');
+        }
+
+        return trimmed;
+    }
+
+    /**
+     * Gets the configured rules folder name with validation
+     */
+    static getConfiguredRulesFolderName(): string {
+        const config = vscode.workspace.getConfiguration('fabInspector');
+        const configuredName = config.get<string>('rulesFolderName', 'fab-inspector-rules');
+        
+        try {
+            return this.validateFolderName(configuredName);
+        } catch (error) {
+            console.warn(`Invalid rules folder name configuration: ${error}. Using default 'fab-inspector-rules'`);
+            vscode.window.showWarningMessage(`Invalid rules folder name in settings: ${error}. Using default 'fab-inspector-rules'`);
+            return 'fab-inspector-rules';
+        }
+    }
 }

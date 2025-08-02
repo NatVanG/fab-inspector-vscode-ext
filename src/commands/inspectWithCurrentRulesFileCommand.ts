@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { runFabInspector } from '../core/fabInspector';
+import { SecurityUtils } from '../utils/securityUtils';
 
 /**
  * Register and return the inspect with current rules file command
@@ -31,23 +32,24 @@ export function registerInspectWithCurrentRulesFileCommand(context: vscode.Exten
             return;
         }
 
-        // Validate that the file is within the fab-inspector-rules folder
+        // Validate that the file is within the configured rules folder
+        const rulesFolderName = SecurityUtils.getConfiguredRulesFolderName();
         const relativePath = path.relative(workspaceFolder.uri.fsPath, fileUri.fsPath);
         const pathParts = relativePath.split(path.sep);
         
-        if (pathParts.length < 2 || pathParts[0] !== 'fab-inspector-rules') {
-            vscode.window.showErrorMessage('The rules file must be located within the "fab-inspector-rules" folder in your workspace.');
+        if (pathParts.length < 2 || pathParts[0] !== rulesFolderName) {
+            vscode.window.showErrorMessage(`The rules file must be located within the "${rulesFolderName}" folder in your workspace.`);
             return;
         }
 
         const fabricItemPath = workspaceFolder.uri.fsPath;
         const rulesPath = fileUri.fsPath;
-        const formats = 'GitHub'; // Default to GitHub format as requested
+        const formats = 'Console';
 
         try {
             // Show info message about what's happening
             const fileName = path.basename(rulesPath);
-            vscode.window.showInformationMessage(`Running Fab Inspector on "${fileName}" with GitHub output format...`);
+            vscode.window.showInformationMessage(`Running Fab Inspector on "${fileName}"...`);
 
             // Run Fab Inspector with the current file
             await runFabInspector(context, fabricItemPath, rulesPath, formats);

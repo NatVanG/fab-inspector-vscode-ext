@@ -14,11 +14,12 @@ export async function runFabInspector(context: vscode.ExtensionContext, fabricIt
     if (!rulesPath.includes('fab-inspector-temp-rule') && !fs.existsSync(rulesPath)) {
         const rulesDir = path.dirname(rulesPath);
         const rulesFile = path.basename(rulesPath);
+        const rulesFolderName = SecurityUtils.getConfiguredRulesFolderName();
 
         if (!fs.existsSync(rulesDir)) {
-            vscode.window.showErrorMessage('The "fab-inspector-rules" folder was not found in the workspace. Please create this folder and add your rules files.');
+            vscode.window.showErrorMessage(`The "${rulesFolderName}" folder was not found in the workspace. Please create this folder and add your rules files.`);
         } else {
-            vscode.window.showErrorMessage(`The rules file "${rulesFile}" was not found in the "fab-inspector-rules" folder.`);
+            vscode.window.showErrorMessage(`The rules file "${rulesFile}" was not found in the "${rulesFolderName}" folder.`);
         }
         cleanup?.();
         return;
