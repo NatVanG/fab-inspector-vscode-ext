@@ -1,22 +1,22 @@
 name: Release Extension
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.0.0)'
+        description: 'Version to release (e.g., 0.0.5, 0.1.0, 1.0.0)'
         required: true
         type: string
 
 jobs:
   release:
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -30,10 +30,15 @@ jobs:
     - name: Check licenses
       run: npm run license-check
 
-    - name: Update version if provided
-      if: github.event.inputs.version
+    - name: Update version
       run: |
-        npm version ${{ github.event.inputs.version }} --no-git-tag-version
+        CURRENT_VERSION=$(node -p "require('./package.json').version")
+        if [ "$CURRENT_VERSION" != "${{ github.event.inputs.version }}" ]; then
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          echo "Version updated from $CURRENT_VERSION to ${{ github.event.inputs.version }}"
+        else
+          echo "Version ${{ github.event.inputs.version }} is already current, skipping update"
+        fi
 
     - name: Lint code
       run: npm run lint
@@ -45,34 +50,41 @@ jobs:
       run: |
         xvfb-run -a npm test
 
-    - name: Install vsce (VS Code Extension Manager)
+    - name: Install vsce
       run: npm install -g @vscode/vsce
 
     - name: Package extension
       run: vsce package
 
-    - name: Get package info
-      id: package
+    - name: Commit version update
       run: |
-        PACKAGE_VERSION=$(node -p "require('./package.json').version")
-        PACKAGE_NAME=$(node -p "require('./package.json').name")
-        echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
-        echo "name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add package.json package-lock.json
+        git commit -m "Release version ${{ github.event.inputs.version }}" || exit 0
 
-    - name: Upload to release
-      if: github.event_name == 'release'
+    - name: Create and push tag
+      run: |
+        git tag "v${{ github.event.inputs.version }}"
+        git push origin "v${{ github.event.inputs.version }}"
+
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "v${{ github.event.inputs.version }}"
+        release_name: "Release v${{ github.event.inputs.version }}"
+        draft: false
+        prerelease: false
+
+    - name: Upload VSIX to Release
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.vsix
-        asset_name: ${{ steps.package.outputs.name }}-${{ steps.package.outputs.version }}.vsix
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./fab-inspector-${{ github.event.inputs.version }}.vsix
+        asset_name: fab-inspector-${{ github.event.inputs.version }}.vsix
         asset_content_type: application/zip
-
-    - name: Upload VSIX artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: fab-inspector-extension-release
-        path: '*.vsix'
-        retention-days: 90
