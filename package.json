@@ -1,13 +1,16 @@
 {
   "name": "fab-inspector",
   "displayName": "Fab Inspector",
-  "description": "Inspect Microsoft Fabric CI/CD items directly within VS Code!",
-  "version": "0.0.3",
+  "description": "Inspect Microsoft Fabric CI/CD items directly within VS Code! Requires .NET 8+ runtime.",
+  "version": "0.0.4",
   "publisher": "NatVanG",
   "license": "MIT",
   "engines": {
     "vscode": "^1.102.0"
   },
+  "extensionDependencies": [
+    "ms-dotnettools.vscode-dotnet-runtime"
+  ],
   "categories": [
     "Other"
   ],
@@ -66,22 +69,27 @@
         "fabInspector.autoUpdateCli": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically check for and download CLI updates"
+          "description": "Automatically check for and download Fab Inspector CLI updates"
         },
         "fabInspector.cliUpdateInterval": {
           "type": "number",
           "default": 24,
-          "description": "Hours between CLI update checks (when auto-update is enabled)"
+          "description": "Hours between Fab Inspector CLI update checks (when auto-update is enabled)"
         },
         "fabInspector.cliVersion": {
           "type": "string",
           "default": "latest",
-          "description": "Version of the Fab Inspector CLI to download. Use 'latest' for the most recent release, or specify a version tag like 'v2.4.3'"
+          "description": "Version of the Fab Inspector CLI to download. Use 'latest' for the most recent release, or specify a version tag like 'v2.4.5'. Default is 'latest'."
         },
         "fabInspector.rulesFolderName": {
           "type": "string",
           "default": "fab-inspector-rules",
           "description": "Name of the folder to create for storing Fab Inspector rules. Must be a valid folder name (alphanumeric, hyphens, underscores only)."
+        },
+        "fabInspector.skipDotNetCheck": {
+          "type": "boolean",
+          "default": false,
+          "description": "Skip .NET runtime dependency check and installation. Enable this if you already have .NET 8+ installed but the extension fails to detect it."
         }
       }
     },

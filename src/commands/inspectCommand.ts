@@ -35,10 +35,10 @@ export function registerInspectCommand(context: vscode.ExtensionContext): vscode
         });
 
         let formats = await vscode.window.showInputBox({
-            placeHolder: 'Enter the output format: Console (default), JSON, HTML, GitHub, ADO.',
+            placeHolder: 'Enter the output format: Console (default) or HTML.',
             prompt: 'Output Formats',
             validateInput: (value) => {
-            const allowedFormats = ['JSON', 'HTML', 'Console', 'GitHub', 'ADO'];
+            const allowedFormats = ['Console', 'HTML'];
             if (!value || value.trim() === '') {
                 return null; // Allow empty, will default to Console
             }

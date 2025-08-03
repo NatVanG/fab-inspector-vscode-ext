@@ -62,6 +62,123 @@ export class CliManager {
     }
 
     /**
+     * Ensures .NET runtime is available using the .NET Install Tool extension
+     */
+    private async ensureDotNetRuntime(): Promise<string> {
+        try {
+            // Check if user has disabled .NET dependency checking
+            const config = vscode.workspace.getConfiguration('fabInspector');
+            const skipDotNetCheck = config.get<boolean>('skipDotNetCheck', false);
+            
+            if (skipDotNetCheck) {
+                this.log('Skipping .NET runtime check (disabled by user configuration)');
+                return 'dotnet'; // Assume dotnet command is available
+            }
+
+            // First, check if .NET 8+ is already installed locally
+            this.log('Checking for existing .NET runtime...');
+            
+            const existingDotNet = await this.checkExistingDotNet();
+            if (existingDotNet) {
+                this.log(`Found existing .NET 8+ runtime: ${existingDotNet}`);
+                return existingDotNet;
+            }
+            
+            // If not found locally, try to acquire through .NET Install Tool extension
+            this.log('Acquiring .NET 8.0 runtime using .NET Install Tool extension...');
+            
+            // Get the .NET Install Tool extension
+            const dotnetExtension = vscode.extensions.getExtension('ms-dotnettools.vscode-dotnet-runtime');
+            
+            if (!dotnetExtension) {
+                throw new Error('.NET Install Tool extension not found. Please ensure it is installed.');
+            }
+
+            // Activate the extension if needed
+            const dotnetApi = await dotnetExtension.activate();
+            
+            if (!dotnetApi || !dotnetApi.acquireRuntime) {
+                throw new Error('.NET Install Tool extension API not available.');
+            }
+
+            // Request .NET 8 runtime
+            const dotnetPath = await dotnetApi.acquireRuntime('8.0', 'runtime');
+            this.log(`Successfully acquired .NET runtime at: ${dotnetPath}`);
+            
+            return dotnetPath;
+        } catch (error) {
+            this.logError(`Failed to acquire .NET runtime: ${error}`);
+            
+            // Show fallback warning with manual options
+            const selection = await vscode.window.showErrorMessage(
+                'Failed to automatically acquire .NET 8.0 runtime. Please install it manually.',
+                'Download .NET 8',
+                'Open Extension Settings',
+                'Continue Anyway'
+            );
+            
+            if (selection === 'Download .NET 8') {
+                vscode.env.openExternal(vscode.Uri.parse('https://dotnet.microsoft.com/download/dotnet/8.0'));
+            } else if (selection === 'Open Extension Settings') {
+                vscode.commands.executeCommand('workbench.action.openSettings', 'fabInspector');
+            }
+            
+            if (selection !== 'Continue Anyway') {
+                throw new Error('Cannot proceed without .NET 8.0 runtime');
+            }
+            
+            // Return default dotnet command if user chose to continue anyway
+            return 'dotnet';
+        }
+    }
+
+    /**
+     * Checks if .NET 8+ is already installed on the system
+     */
+    private async checkExistingDotNet(): Promise<string | null> {
+        return new Promise((resolve) => {
+            try {
+                const dotnetProcess = cp.spawn('dotnet', ['--version'], {
+                    windowsHide: true
+                });
+
+                let output = '';
+                dotnetProcess.stdout.on('data', (data) => {
+                    output += data.toString();
+                });
+
+                dotnetProcess.on('close', (code) => {
+                    if (code === 0) {
+                        const version = output.trim();
+                        
+                        // Check if version is 8.0 or later
+                        try {
+                            const majorVersion = parseInt(version.split('.')[0]);
+                            if (majorVersion >= 8) {
+                                resolve('dotnet'); // Return the command that works
+                            } else {
+                                this.log(`Found .NET ${version}, but .NET 8.0 or later is required`);
+                                resolve(null);
+                            }
+                        } catch (parseError) {
+                            this.logWarn(`Could not parse .NET version: ${version}`);
+                            resolve(null);
+                        }
+                    } else {
+                        resolve(null);
+                    }
+                });
+
+                dotnetProcess.on('error', () => {
+                    resolve(null);
+                });
+            } catch (error) {
+                resolve(null);
+            }
+        });
+    }
+
+    /**
      * Ensures the CLI is available, downloading it if necessary
      */
     public async ensureCliAvailable(): Promise<string> {
@@ -69,6 +186,9 @@ export class CliManager {
         if (os.platform() !== 'win32') {
             throw new Error('Fab Inspector CLI is currently only supported on Windows');
         }
+
+        // Ensure .NET 8 runtime is available using the .NET Install Tool extension
+        await this.ensureDotNetRuntime();
 
         // Check if CLI already exists and is valid
         if (await this.isCliValid()) {
