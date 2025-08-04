@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as https from 'https';
 import * as cp from 'child_process';
+import * as crypto from 'crypto';
 import { getOutputChannel } from '../utils/outputChannel';
 import { SecurityUtils } from '../utils/securityUtils';
 
@@ -318,6 +319,22 @@ export class CliManager {
         }, async (progress) => {
             let retryCount = 0;
 
+            const userConsentKey = 'cliUserConsent';
+            const config = vscode.workspace.getConfiguration('fabInspector');
+            let userConsent = config.get<boolean>(userConsentKey, false);
+
+            if (!userConsent) {
+                const consent = await vscode.window.showInformationMessage(
+                    'The Fab Inspector extension needs to download and run the PBIRInspectorCLI.exe executable. Do you allow this?',
+                    { modal: true },
+                    'Yes', 'No'
+                );
+                if (consent !== 'Yes') {
+                    throw new Error('User did not consent to download and run the Fab Inspector CLI executable.');
+                }
+                await config.update(userConsentKey, true, vscode.ConfigurationTarget.Global);
+            }
+
             while (retryCount < this.maxRetries) {
                 try {
                     progress.report({
@@ -346,6 +363,9 @@ export class CliManager {
                     const zipPath = path.join(this.cliDirectory, 'cli-temp.zip');
                     await this.downloadFile(cliUrl, zipPath);
 
+                    // TODO: Validate checksum of the downloaded zip file before extraction
+                    //await this.validateCliChecksum(zipPath);
+
                     progress.report({ increment: 50, message: "Extracting..." });
 
                     // Extract ZIP using require with error handling
@@ -367,7 +387,7 @@ export class CliManager {
 
                     progress.report({ increment: 10, message: "Complete!" });
 
-                    vscode.window.showInformationMessage('Fab Inspector CLI downloaded successfully!');
+                    vscode.window.showInformationMessage('Fab Inspector CLI downloaded and validated successfully!');
                     return;
 
                 } catch (error) {
@@ -550,6 +570,44 @@ export class CliManager {
                     fs.writeFileSync(outputPath, entry.getData());
                 }
             }
+        }
+    }
+
+    /**
+     * Calculates the SHA256 checksum of a file
+     */
+    private calculateFileChecksum(filePath: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const hash = crypto.createHash('sha256');
+            const stream = fs.createReadStream(filePath);
+            stream.on('data', (data) => hash.update(data));
+            stream.on('end', () => resolve(hash.digest('hex')));
+            stream.on('error', (err) => reject(err));
+        });
+    }
+
+    /**
+     * Downloads and validates the checksum for the CLI executable
+     */
+    private async validateCliChecksum(filePath: string): Promise<void> {
+        const checksumUrl = this.getCliUrl().replace(/\.zip$/, '.sha256'); // Adjust if your checksum URL differs
+        const checksumPath = filePath + '.sha256';
+
+        // Download checksum file
+        await this.downloadFile(checksumUrl, checksumPath);
+
+        // Read expected checksum
+        const expectedChecksum = fs.readFileSync(checksumPath, 'utf8').split(' ')[0].trim();
+
+        // Calculate actual checksum
+        const actualChecksum = await this.calculateFileChecksum(filePath);
+
+        // Clean up checksum file
+        fs.unlinkSync(checksumPath);
+
+        // Compare
+        if (expectedChecksum !== actualChecksum) {
+            throw new Error(`Checksum validation failed for CLI zip file. Expected: ${expectedChecksum}, Actual: ${actualChecksum}`);
         }
     }
 }

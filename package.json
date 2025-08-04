@@ -86,6 +86,11 @@
           "type": "boolean",
           "default": false,
           "description": "Skip .NET runtime dependency check and installation. Enable this if you already have .NET 8+ installed but the extension fails to detect it."
+        },
+        "fabInspector.cliUserConsent": {
+          "type": "boolean",
+          "default": false,
+          "description": "Consent to download and run the Fab Inspector CLI executable. See extension README for details."
         }
       }
     },
