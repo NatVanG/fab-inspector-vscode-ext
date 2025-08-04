@@ -4,7 +4,7 @@ A Visual Studio Code extension that provides seamless integration with the [Fab 
 
 The GitHub repository for this extension can be found at https://github.com/NatVanG/fab-inspector-vscode-ext.
 
-> **⚠️ Platform Support**: This extension currently only supports **Windows only** with the .NET 8+ runtime installed.
+> **⚠️ Platform Support**: This extension currently supports **Windows only** and requires the .NET 8+ runtime.
 
 ## 🚀 Features
 
@@ -30,7 +30,7 @@ The GitHub repository for this extension can be found at https://github.com/NatV
 - **Operating System**: Windows (64-bit)
 - **.NET Runtime**: .NET 8.0 or later must be installed
 - **Visual Studio Code**: Version 1.102.0 or higher
-- **Internet Connection**: Required for CLI downloads and updates
+- **Internet Connection**: Required for Fab Inspector CLI downloads. 
 
 ### **Installing .NET 8**
 The extension requires .NET 8 runtime to execute the Fab Inspector CLI. You have several options:
@@ -48,9 +48,9 @@ The extension will try and check if there is a local .NET 8+ runtime installed a
 4. **Verify Installation**: Open Command Prompt and run `dotnet --version` to confirm installation
 
 ### **Fabric Inspector CLI**
-- **Automatic Download**: The Fab Inspector CLI is automatically downloaded when first needed
+- **Automatic Download**: The Fab Inspector CLI is automatically downloaded when first needed from the "CLI" releases published to https://github.com/NatVanG/PBI-InspectorV2/releases.
 - **Version Management**: Configurable CLI version selection (latest or specific versions)
-- **Update Management**: Optional auto-updates (enabled by default) with configurable intervals
+- **Update Management**: Optional auto-updates (enabled by default) with configurable cache expiry intervals
 
 > **💡 Note**: Enabling auto-update is recommended to get the latest Fab Inspector CLI fixes and performance improvements.
 

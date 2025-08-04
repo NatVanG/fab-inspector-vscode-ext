@@ -12,7 +12,8 @@
     "ms-dotnettools.vscode-dotnet-runtime"
   ],
   "categories": [
-    "Other"
+    "Linters",
+    "Testing"
   ],
   "keywords": [
     "fabric",
@@ -91,6 +92,11 @@
           "type": "boolean",
           "default": false,
           "description": "Consent to download and run the Fab Inspector CLI executable. See extension README for details."
+        },
+        "fabInspector.dotnetUserConsent": {
+          "type": "boolean",
+          "default": false,
+          "description": "Consent to check for and download the .NET runtime (from Microsoft) if required. See extension README for details."
         }
       }
     },

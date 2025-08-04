@@ -76,6 +76,21 @@ export class CliManager {
                 return 'dotnet'; // Assume dotnet command is available
             }
 
+            // Check user consent for .NET runtime check/download
+            const dotnetConsentKey = 'dotnetUserConsent';
+            let dotnetUserConsent = config.get<boolean>(dotnetConsentKey, false);
+            if (!dotnetUserConsent) {
+                const consent = await vscode.window.showInformationMessage(
+                    'The Fab Inspector extension needs to check for and may download the .NET runtime (from Microsoft). Do you allow this?',
+                    { modal: true },
+                    'Yes', 'No'
+                );
+                if (consent !== 'Yes') {
+                    throw new Error('User did not consent to check or download the .NET runtime.');
+                }
+                await config.update(dotnetConsentKey, true, vscode.ConfigurationTarget.Global);
+            }
+
             // First, check if .NET 8+ is already installed locally
             this.log('Checking for existing .NET runtime...');
 
@@ -85,28 +100,13 @@ export class CliManager {
                 return existingDotNet;
             }
 
-            // If not found locally, try to acquire through .NET Install Tool extension
-            this.log('Acquiring .NET 8.0 runtime using .NET Install Tool extension...');
+            this.log('No existing .NET 8+ runtime found, acquiring via .NET Install Tool extension. This may take a few minutes...');
+   
+            // Provide required parameters for dotnet.acquire command
+            const requestingExtensionId = 'NatVanG.fab-inspector'; // Replace with your actual extension ID if different
+            await vscode.commands.executeCommand('dotnet.acquire', { version: '8.0', requestingExtensionId, installType: 'local' , mode: 'runtime' });
+            return "dotnet"; // Return default dotnet command
 
-            // Get the .NET Install Tool extension
-            const dotnetExtension = vscode.extensions.getExtension('ms-dotnettools.vscode-dotnet-runtime');
-
-            if (!dotnetExtension) {
-                throw new Error('.NET Install Tool extension not found. Please ensure it is installed.');
-            }
-
-            // Activate the extension if needed
-            const dotnetApi = await dotnetExtension.activate();
-
-            if (!dotnetApi || !dotnetApi.acquireRuntime) {
-                throw new Error('.NET Install Tool extension API not available.');
-            }
-
-            // Request .NET 8 runtime
-            const dotnetPath = await dotnetApi.acquireRuntime('8.0', 'runtime');
-            this.log(`Successfully acquired .NET runtime at: ${dotnetPath}`);
-
-            return dotnetPath;
         } catch (error) {
             this.logError(`Failed to acquire .NET runtime: ${error}`);
 
@@ -119,7 +119,7 @@ export class CliManager {
             );
 
             if (selection === 'Download .NET 8') {
-                vscode.env.openExternal(vscode.Uri.parse('https://dotnet.microsoft.com/download/dotnet/8.0'));
+                vscode.env.openExternal(vscode.Uri.parse('https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-8.0.18-windows-x64-installer'));
             } else if (selection === 'Open Extension Settings') {
                 vscode.commands.executeCommand('workbench.action.openSettings', 'fabInspector');
             }
@@ -138,46 +138,60 @@ export class CliManager {
      */
     private async checkExistingDotNet(): Promise<string | null> {
         return new Promise((resolve) => {
+            let dotnetProcess: cp.ChildProcess | null = null;
             try {
-                const dotnetProcess = cp.spawn('dotnet', ['--version'], {
+                dotnetProcess = cp.spawn('dotnet', ['--list-runtimes'], {
                     windowsHide: true
                 });
+            } catch (error) {
+                this.logWarn('dotnet CLI is not available or failed to start. Please ensure the .NET 8+ runtime is installed. If you have .NET installed but the extension fails to detect it, you can skip the .NET runtime dependency check in the extension settings.');
+                resolve(null);
+                return;
+            }
 
-                let output = '';
-                dotnetProcess.stdout.on('data', (data) => {
-                    output += data.toString();
-                });
+            if (!dotnetProcess || !dotnetProcess.stdout) {
+                this.logWarn('dotnet CLI process could not be started. Please ensure the .NET 8+ runtime is installed. If you have .NET installed but the extension fails to detect it, you can skip the .NET runtime dependency check in the extension settings.');
+                resolve(null);
+                return;
+            }
 
-                dotnetProcess.on('close', (code) => {
-                    if (code === 0) {
-                        const version = output.trim();
+            let output = '';
+            dotnetProcess.stdout.on('data', (data) => {
+                output += data.toString();
+            });
 
-                        // Check if version is 8.0 or later
-                        try {
-                            const majorVersion = parseInt(version.split('.')[0]);
-                            if (majorVersion >= 8) {
-                                resolve('dotnet'); // Return the command that works
-                            } else {
-                                this.log(`Found .NET ${version}, but .NET 8.0 or later is required`);
-                                resolve(null);
-                            }
-                        } catch (parseError) {
-                            this.logWarn(`Could not parse .NET version: ${version}`);
-                            resolve(null);
+            dotnetProcess.on('close', (code) => {
+                if (code === 0) {
+                    // Look for a line like: Microsoft.NETCore.App 8.0.0 [C:\...]
+                    const lines = output.split(/\r?\n/);
+                    const found = lines.find(line => {
+                        const match = line.match(/^Microsoft\.NETCore\.App\s+(\d+)\.(\d+)\.(\d+)/);
+                        if (match) {
+                            const majorVersion = parseInt(match[1]);
+                            return majorVersion >= 8;
                         }
+                        return false;
+                    });
+                    if (found) {
+                        resolve('dotnet');
                     } else {
+                        this.log('Microsoft.NETCore.App 8.0 or later not found in dotnet runtimes. Please ensure the .NET 8+ runtime is installed. If you have .NET installed but the extension fails to detect it, you can skip the .NET runtime dependency check in the extension settings.');
                         resolve(null);
                     }
-                });
-
-                dotnetProcess.on('error', () => {
+                } else {
+                    this.logWarn('dotnet CLI returned a non-zero exit code. It may not be installed or accessible. Please ensure the .NET 8+ runtime is installed. If you have .NET installed but the extension fails to detect it, you can skip the .NET runtime dependency check in the extension settings.');
                     resolve(null);
-                });
-            } catch (error) {
+                }
+            });
+
+            dotnetProcess.on('error', (err) => {
+                this.logWarn('dotnet CLI is not available or failed to start. Please ensure the .NET 8+ runtime is installed. If you have .NET installed but the extension fails to detect it, you can skip the .NET runtime dependency check in the extension settings.');
                 resolve(null);
-            }
+            });
         });
     }
+
+
 
     /**
      * Ensures the CLI is available, downloading it if necessary
@@ -325,7 +339,7 @@ export class CliManager {
 
             if (!userConsent) {
                 const consent = await vscode.window.showInformationMessage(
-                    'The Fab Inspector extension needs to download and run the PBIRInspectorCLI.exe executable. Do you allow this?',
+                    'The Fab Inspector extension needs to download and run the Fab Inspector CLI executable. Do you allow this?',
                     { modal: true },
                     'Yes', 'No'
                 );
@@ -387,7 +401,7 @@ export class CliManager {
 
                     progress.report({ increment: 10, message: "Complete!" });
 
-                    vscode.window.showInformationMessage('Fab Inspector CLI downloaded and validated successfully!');
+                    vscode.window.showInformationMessage('Fab Inspector CLI downloaded successfully!');
                     return;
 
                 } catch (error) {
