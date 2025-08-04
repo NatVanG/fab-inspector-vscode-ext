@@ -1,0 +1,140 @@
+name: Publish to VS Code Marketplace
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - current
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check licenses
+      run: npm run license-check
+
+    - name: Get current version
+      id: current-version
+      run: |
+        VERSION=$(node -p "require('./package.json').version")
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $VERSION"
+
+    - name: Update version if needed
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.release_type != 'current'
+      run: |
+        npm version ${{ github.event.inputs.release_type }} --no-git-tag-version
+        NEW_VERSION=$(node -p "require('./package.json').version")
+        echo "Updated version to: $NEW_VERSION"
+
+    - name: Get final version
+      id: final-version
+      run: |
+        VERSION=$(node -p "require('./package.json').version")
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Final version: $VERSION"
+
+    - name: Lint code
+      run: npm run lint
+
+    - name: Compile TypeScript
+      run: npm run compile
+
+    - name: Run tests
+      run: |
+        xvfb-run -a npm test
+
+    - name: Install vsce
+      run: npm install -g @vscode/vsce
+
+    - name: Package extension
+      run: vsce package
+
+    - name: Publish to VS Code Marketplace
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      run: |
+        if [ -z "$VSCE_PAT" ]; then
+          echo "::error::VSCE_PAT secret is not set. Please add your Visual Studio Marketplace Personal Access Token as VSCE_PAT in repository secrets."
+          exit 1
+        fi
+        vsce publish -p $VSCE_PAT
+
+    - name: Commit version update (if updated)
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.release_type != 'current'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add package.json package-lock.json
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Publish version ${{ steps.final-version.outputs.version }}"
+          git push origin ${{ github.ref_name }}
+        fi
+
+    - name: Create and push tag (if updated)
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.release_type != 'current'
+      run: |
+        git tag "v${{ steps.final-version.outputs.version }}"
+        git push origin "v${{ steps.final-version.outputs.version }}"
+
+    - name: Create GitHub Release (if updated)
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.release_type != 'current'
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "v${{ steps.final-version.outputs.version }}"
+        release_name: "Release v${{ steps.final-version.outputs.version }}"
+        body: |
+          Published to VS Code Marketplace
+          
+          **Changes:**
+          - Version ${{ steps.final-version.outputs.version }}
+        draft: false
+        prerelease: false
+
+    - name: Upload VSIX to Release (if updated)
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.release_type != 'current'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./fab-inspector-${{ steps.final-version.outputs.version }}.vsix
+        asset_name: fab-inspector-${{ steps.final-version.outputs.version }}.vsix
+        asset_content_type: application/zip
+
+    - name: Success notification
+      run: |
+        echo "::notice::Successfully published Fab Inspector v${{ steps.final-version.outputs.version }} to VS Code Marketplace!"

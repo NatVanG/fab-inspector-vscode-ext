@@ -50,10 +50,10 @@ export class CliManager {
     private getCliUrl(): string {
         const config = vscode.workspace.getConfiguration('fabInspector');
         const version = config.get<string>('cliVersion', 'latest');
-        
+
         // Validate version to prevent URL manipulation
         const safeVersion = SecurityUtils.validateCliVersion(version);
-        
+
         if (safeVersion === 'latest') {
             return 'https://github.com/NatVanG/PBI-InspectorV2/releases/latest/download/win-x64-CLI.zip';
         } else {
@@ -69,7 +69,7 @@ export class CliManager {
             // Check if user has disabled .NET dependency checking
             const config = vscode.workspace.getConfiguration('fabInspector');
             const skipDotNetCheck = config.get<boolean>('skipDotNetCheck', false);
-            
+
             if (skipDotNetCheck) {
                 this.log('Skipping .NET runtime check (disabled by user configuration)');
                 return 'dotnet'; // Assume dotnet command is available
@@ -77,26 +77,26 @@ export class CliManager {
 
             // First, check if .NET 8+ is already installed locally
             this.log('Checking for existing .NET runtime...');
-            
+
             const existingDotNet = await this.checkExistingDotNet();
             if (existingDotNet) {
                 this.log(`Found existing .NET 8+ runtime: ${existingDotNet}`);
                 return existingDotNet;
             }
-            
+
             // If not found locally, try to acquire through .NET Install Tool extension
             this.log('Acquiring .NET 8.0 runtime using .NET Install Tool extension...');
-            
+
             // Get the .NET Install Tool extension
             const dotnetExtension = vscode.extensions.getExtension('ms-dotnettools.vscode-dotnet-runtime');
-            
+
             if (!dotnetExtension) {
                 throw new Error('.NET Install Tool extension not found. Please ensure it is installed.');
             }
 
             // Activate the extension if needed
             const dotnetApi = await dotnetExtension.activate();
-            
+
             if (!dotnetApi || !dotnetApi.acquireRuntime) {
                 throw new Error('.NET Install Tool extension API not available.');
             }
@@ -104,11 +104,11 @@ export class CliManager {
             // Request .NET 8 runtime
             const dotnetPath = await dotnetApi.acquireRuntime('8.0', 'runtime');
             this.log(`Successfully acquired .NET runtime at: ${dotnetPath}`);
-            
+
             return dotnetPath;
         } catch (error) {
             this.logError(`Failed to acquire .NET runtime: ${error}`);
-            
+
             // Show fallback warning with manual options
             const selection = await vscode.window.showErrorMessage(
                 'Failed to automatically acquire .NET 8.0 runtime. Please install it manually.',
@@ -116,17 +116,17 @@ export class CliManager {
                 'Open Extension Settings',
                 'Continue Anyway'
             );
-            
+
             if (selection === 'Download .NET 8') {
                 vscode.env.openExternal(vscode.Uri.parse('https://dotnet.microsoft.com/download/dotnet/8.0'));
             } else if (selection === 'Open Extension Settings') {
                 vscode.commands.executeCommand('workbench.action.openSettings', 'fabInspector');
             }
-            
+
             if (selection !== 'Continue Anyway') {
                 throw new Error('Cannot proceed without .NET 8.0 runtime');
             }
-            
+
             // Return default dotnet command if user chose to continue anyway
             return 'dotnet';
         }
@@ -150,7 +150,7 @@ export class CliManager {
                 dotnetProcess.on('close', (code) => {
                     if (code === 0) {
                         const version = output.trim();
-                        
+
                         // Check if version is 8.0 or later
                         try {
                             const majorVersion = parseInt(version.split('.')[0]);
@@ -249,7 +249,7 @@ export class CliManager {
     private async forceShutdownCli(): Promise<void> {
         try {
             const processName = 'PBIRInspectorCLI.exe';
-            
+
             // Use tasklist to check if the process is running
             const checkProcess = cp.spawn('tasklist', ['/FI', `IMAGENAME eq ${processName}`, '/FO', 'CSV'], {
                 windowsHide: true
@@ -266,7 +266,7 @@ export class CliManager {
                         // Check if process is found in output
                         if (output.includes(processName)) {
                             this.log(`Found running ${processName} process, attempting to terminate...`);
-                            
+
                             // Force kill the process
                             const killProcess = cp.spawn('taskkill', ['/F', '/IM', processName], {
                                 windowsHide: true
@@ -349,35 +349,7 @@ export class CliManager {
                     progress.report({ increment: 50, message: "Extracting..." });
 
                     // Extract ZIP using require with error handling
-                    const AdmZip = require('adm-zip');
-                    const zip = new AdmZip(zipPath);
-                    const entries = zip.getEntries();
-                    
-                    // Extract files from win-x64/CLI/ to bin root
-                    for (const entry of entries) {
-                        if (entry.entryName.startsWith('win-x64/CLI/') && !entry.entryName.includes('Files/')) {
-                            // Extract root CLI files (not in Files folder)
-                            if (!entry.isDirectory) {
-                                const fileName = path.basename(entry.entryName);
-                                const outputPath = path.join(this.cliDirectory, fileName);
-                                fs.writeFileSync(outputPath, entry.getData());
-                            }
-                        }
-                        // Extract Files folder and preserve its internal structure
-                        else if (entry.entryName.startsWith('win-x64/CLI/Files/')) {
-                            // Remove 'win-x64/CLI/' prefix to get 'Files/...' structure
-                            const relativePath = entry.entryName.replace('win-x64/CLI/', '');
-                            const outputPath = path.join(this.cliDirectory, relativePath);
-                            
-                            if (entry.isDirectory) {
-                                fs.mkdirSync(outputPath, { recursive: true });
-                            } else {
-                                // Ensure parent directory exists
-                                fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-                                fs.writeFileSync(outputPath, entry.getData());
-                            }
-                        }
-                    }
+                    await this.extractZip(zipPath, this.cliDirectory);
 
                     progress.report({ increment: 30, message: "Validating..." });
 
@@ -523,7 +495,7 @@ export class CliManager {
         const exists = fs.existsSync(this.cliExecutable);
         const config = vscode.workspace.getConfiguration('fabInspector');
         const version = config.get<string>('cliVersion', 'latest');
-        
+
         const info: { exists: boolean; path: string; lastModified?: Date; version: string; downloadUrl: string } = {
             exists,
             path: this.cliExecutable,
@@ -537,5 +509,47 @@ export class CliManager {
         }
 
         return info;
+    }
+
+    // In your cliManager.ts, make sure you have proper validation
+    private async extractZip(zipPath: string, extractPath: string): Promise<void> {
+        const AdmZip = require('adm-zip');
+        const zip = new AdmZip(zipPath);
+
+        // Log what's in the ZIP file
+        const entries = zip.getEntries();
+
+        for (const entry of entries) {
+            // Check for path traversal attacks
+            if (entry.entryName.includes('..')) {
+                throw new Error('Invalid zip entry: path traversal detected');
+            }
+        }
+
+        // Extract files from win-x64/CLI/ to bin root
+        for (const entry of entries) {
+            if (entry.entryName.startsWith('win-x64/CLI/') && !entry.entryName.includes('Files/')) {
+                // Extract root CLI files (not in Files folder)
+                if (!entry.isDirectory) {
+                    const fileName = path.basename(entry.entryName);
+                    const outputPath = path.join(this.cliDirectory, fileName);
+                    fs.writeFileSync(outputPath, entry.getData());
+                }
+            }
+            // Extract Files folder and preserve its internal structure
+            else if (entry.entryName.startsWith('win-x64/CLI/Files/')) {
+                // Remove 'win-x64/CLI/' prefix to get 'Files/...' structure
+                const relativePath = entry.entryName.replace('win-x64/CLI/', '');
+                const outputPath = path.join(this.cliDirectory, relativePath);
+
+                if (entry.isDirectory) {
+                    fs.mkdirSync(outputPath, { recursive: true });
+                } else {
+                    // Ensure parent directory exists
+                    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+                    fs.writeFileSync(outputPath, entry.getData());
+                }
+            }
+        }
     }
 }

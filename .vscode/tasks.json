@@ -1,20 +1,63 @@
-// See https://go.microsoft.com/fwlink/?LinkId=733558
-// for the documentation about the tasks.json format
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "npm",
-			"script": "watch",
-			"problemMatcher": "$tsc-watch",
-			"isBackground": true,
-			"presentation": {
-				"reveal": "never"
-			},
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			}
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "compile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "isBackground": false,
+      "label": "npm: compile",
+      "detail": "tsc -p ./",
+      "problemMatcher": "$tsc"
+    },
+    {
+      "type": "npm", 
+      "script": "compile:webpack",
+      "group": "build",
+      "isBackground": false,
+      "label": "npm: compile:webpack",
+      "detail": "webpack --mode development --devtool eval-source-map",
+      "problemMatcher": "$tsc"
+    },
+    {
+      "type": "npm",
+      "script": "watch",
+      "group": "build",
+      "isBackground": true,
+      "label": "npm: watch",
+      "detail": "tsc -watch -p ./",
+      "problemMatcher": "$tsc-watch",
+      "presentation": {
+        "reveal": "never"
+      }
+    },
+    {
+      "type": "npm",
+      "script": "watch:webpack", 
+      "group": "build",
+      "isBackground": true,
+      "label": "npm: watch:webpack",
+      "detail": "webpack --mode development --devtool eval-source-map --watch",
+      "problemMatcher": "$tsc-watch"
+    },
+    {
+      "type": "npm",
+      "script": "package",
+      "group": "build",
+      "isBackground": false,
+      "label": "npm: package",
+      "detail": "webpack --mode production --devtool false"
+    },
+    {
+      "type": "npm",
+      "script": "test",
+      "group": "test",
+      "isBackground": false,
+      "label": "npm: test",
+      "detail": "vscode-test"
+    }
+  ]
 }
