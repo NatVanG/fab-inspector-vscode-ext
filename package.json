@@ -2,15 +2,12 @@
   "name": "fab-inspector",
   "displayName": "Fab Inspector",
   "description": "Analyze and inspect Microsoft Fabric CI/CD items directly within VS Code. Requires .NET 8+ runtime.",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "publisher": "NatVanG",
   "license": "MIT",
   "engines": {
     "vscode": "^1.102.0"
   },
-  "extensionDependencies": [
-    "ms-dotnettools.vscode-dotnet-runtime"
-  ],
   "categories": [
     "Linters",
     "Testing"
@@ -92,11 +89,6 @@
           "type": "boolean",
           "default": false,
           "description": "Consent to download and run the Fab Inspector CLI executable. See extension README for details."
-        },
-        "fabInspector.dotnetUserConsent": {
-          "type": "boolean",
-          "default": false,
-          "description": "Consent to check for and download the .NET runtime (from Microsoft) if required. See extension README for details."
         }
       }
     },

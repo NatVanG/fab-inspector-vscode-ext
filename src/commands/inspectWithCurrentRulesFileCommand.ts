@@ -38,7 +38,7 @@ export function registerInspectWithCurrentRulesFileCommand(context: vscode.Exten
         const pathParts = relativePath.split(path.sep);
         
         if (pathParts.length < 2 || pathParts[0] !== rulesFolderName) {
-            vscode.window.showErrorMessage(`The rules file must be located within the "${rulesFolderName}" folder in your workspace.`);
+            vscode.window.showErrorMessage(`The rules file must be located within the "${rulesFolderName}" folder in the root of your workspace.`);
             return;
         }
 

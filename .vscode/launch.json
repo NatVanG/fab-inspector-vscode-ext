@@ -13,7 +13,7 @@
       ],
       "preLaunchTask": {
         "type": "npm",
-        "script": "compile"
+        "script": "watch"
       }
     },
     {
@@ -28,7 +28,7 @@
       ],
       "preLaunchTask": {
         "type": "npm",
-        "script": "compile:webpack"
+        "script": "watch:webpack"
       }
     },
     {

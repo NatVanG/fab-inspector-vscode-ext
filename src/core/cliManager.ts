@@ -76,21 +76,6 @@ export class CliManager {
                 return 'dotnet'; // Assume dotnet command is available
             }
 
-            // Check user consent for .NET runtime check/download
-            const dotnetConsentKey = 'dotnetUserConsent';
-            let dotnetUserConsent = config.get<boolean>(dotnetConsentKey, false);
-            if (!dotnetUserConsent) {
-                const consent = await vscode.window.showInformationMessage(
-                    'The Fab Inspector extension needs to check for and may download the .NET runtime (from Microsoft). Do you allow this?',
-                    { modal: true },
-                    'Yes', 'No'
-                );
-                if (consent !== 'Yes') {
-                    throw new Error('User did not consent to check or download the .NET runtime.');
-                }
-                await config.update(dotnetConsentKey, true, vscode.ConfigurationTarget.Global);
-            }
-
             // First, check if .NET 8+ is already installed locally
             this.log('Checking for existing .NET runtime...');
 
@@ -99,28 +84,15 @@ export class CliManager {
                 this.log(`Found existing .NET 8+ runtime: ${existingDotNet}`);
                 return existingDotNet;
             }
-
-            this.log('No existing .NET 8+ runtime found, acquiring via .NET Install Tool extension. This may take a few minutes...');
-   
-            // Provide required parameters for dotnet.acquire command
-            const requestingExtensionId = 'NatVanG.fab-inspector'; // Replace with your actual extension ID if different
-            await vscode.commands.executeCommand('dotnet.acquire', { version: '8.0', requestingExtensionId, installType: 'local' , mode: 'runtime' });
-            return "dotnet"; // Return default dotnet command
-
-        } catch (error) {
-            this.logError(`Failed to acquire .NET runtime: ${error}`);
-
+            
             // Show fallback warning with manual options
-            const selection = await vscode.window.showErrorMessage(
-                'Failed to automatically acquire .NET 8.0 runtime. Please install it manually.',
-                'Download .NET 8',
-                'Open Extension Settings',
+            const selection = await vscode.window.showInformationMessage(
+                'Please install the .NET 8 runtime from link provided or:',
+                'Skip future .NET checks in settings',
                 'Continue Anyway'
             );
 
-            if (selection === 'Download .NET 8') {
-                vscode.env.openExternal(vscode.Uri.parse('https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-8.0.18-windows-x64-installer'));
-            } else if (selection === 'Open Extension Settings') {
+            if (selection === 'Skip future .NET checks in settings') {
                 vscode.commands.executeCommand('workbench.action.openSettings', 'fabInspector');
             }
 
@@ -129,7 +101,13 @@ export class CliManager {
             }
 
             // Return default dotnet command if user chose to continue anyway
-            return 'dotnet';
+            return '';
+
+        } catch (error) {
+            this.logError(`Failed to ensure .NET runtime: ${error}`);
+
+            // Return default dotnet command if user chose to continue anyway
+            return '';
         }
     }
 
@@ -137,6 +115,7 @@ export class CliManager {
      * Checks if .NET 8+ is already installed on the system
      */
     private async checkExistingDotNet(): Promise<string | null> {
+        const errorMessage = '.NET 8+ runtime is not available or failed to start.';
         return new Promise((resolve) => {
             let dotnetProcess: cp.ChildProcess | null = null;
             try {
@@ -144,13 +123,13 @@ export class CliManager {
                     windowsHide: true
                 });
             } catch (error) {
-                this.logWarn('dotnet CLI is not available or failed to start. Please ensure the .NET 8+ runtime is installed. If you have .NET installed but the extension fails to detect it, you can skip the .NET runtime dependency check in the extension settings.');
+                this.logWarn(errorMessage);
                 resolve(null);
                 return;
             }
 
             if (!dotnetProcess || !dotnetProcess.stdout) {
-                this.logWarn('dotnet CLI process could not be started. Please ensure the .NET 8+ runtime is installed. If you have .NET installed but the extension fails to detect it, you can skip the .NET runtime dependency check in the extension settings.');
+                this.logWarn(errorMessage);
                 resolve(null);
                 return;
             }
@@ -175,17 +154,17 @@ export class CliManager {
                     if (found) {
                         resolve('dotnet');
                     } else {
-                        this.log('Microsoft.NETCore.App 8.0 or later not found in dotnet runtimes. Please ensure the .NET 8+ runtime is installed. If you have .NET installed but the extension fails to detect it, you can skip the .NET runtime dependency check in the extension settings.');
+                        this.log(errorMessage);
                         resolve(null);
                     }
                 } else {
-                    this.logWarn('dotnet CLI returned a non-zero exit code. It may not be installed or accessible. Please ensure the .NET 8+ runtime is installed. If you have .NET installed but the extension fails to detect it, you can skip the .NET runtime dependency check in the extension settings.');
+                    this.logWarn(errorMessage);
                     resolve(null);
                 }
             });
 
             dotnetProcess.on('error', (err) => {
-                this.logWarn('dotnet CLI is not available or failed to start. Please ensure the .NET 8+ runtime is installed. If you have .NET installed but the extension fails to detect it, you can skip the .NET runtime dependency check in the extension settings.');
+                this.logWarn(errorMessage);
                 resolve(null);
             });
         });

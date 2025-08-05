@@ -17,7 +17,7 @@ export async function runFabInspector(context: vscode.ExtensionContext, fabricIt
         const rulesFolderName = SecurityUtils.getConfiguredRulesFolderName();
 
         if (!fs.existsSync(rulesDir)) {
-            vscode.window.showErrorMessage(`The "${rulesFolderName}" folder was not found in the workspace. Please create this folder and add your rules files.`);
+            vscode.window.showErrorMessage(`The "${rulesFolderName}" folder was not found in the workspace. Please create this folder at the root of your workspace and add your rules files.`);
         } else {
             vscode.window.showErrorMessage(`The rules file "${rulesFile}" was not found in the "${rulesFolderName}" folder.`);
         }
