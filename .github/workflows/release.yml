@@ -40,6 +40,9 @@ jobs:
 
     - name: Compile TypeScript
       run: npm run compile
+    
+    - name: Build (webpack production)
+      run: npm run webpack:prod
 
     - name: Run tests
       run: |
@@ -48,9 +51,6 @@ jobs:
     - name: Install vsce
       run: npm install -g @vscode/vsce
 
-    - name: Build (webpack production)
-      run: npm run webpack:prod
-        
     - name: Package extension
       run: vsce package
 
