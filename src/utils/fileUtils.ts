@@ -4,12 +4,6 @@ import * as os from 'os';
 import * as vscode from 'vscode';
 import { CliManager } from '../core/cliManager';
 
-/**
- * Get the path to the bundled executable (legacy - will be replaced by CLI manager)
- */
-export function getFabInspectorExecutablePath(context: vscode.ExtensionContext): string {
-    return path.join(context.extensionPath, 'bin', 'PBIRInspectorCLI.exe');
-}
 
 /**
  * Get or create CLI manager instance
@@ -28,30 +22,6 @@ export function getCliManager(context: vscode.ExtensionContext): CliManager {
 export async function ensureCliAvailable(context: vscode.ExtensionContext): Promise<string> {
     const cliManager = getCliManager(context);
     return await cliManager.ensureCliAvailable();
-}
-
-/**
- * Check if the bundled executable and its dependencies exist (legacy - kept for compatibility)
- */
-export function checkBundledExecutable(executablePath: string): Promise<boolean> {
-    return new Promise((resolve) => {
-        // Check if executable exists
-        fs.access(executablePath, fs.constants.F_OK | fs.constants.X_OK, (err) => {
-            if (err) {
-                resolve(false);
-                return;
-            }
-
-            // Check if Files folder exists
-            const filesFolder = path.join(path.dirname(executablePath), 'Files');
-            fs.access(filesFolder, fs.constants.F_OK, (filesErr) => {
-                if (filesErr) {
-                    console.warn('Files folder not found, executable may not work correctly');
-                }
-                resolve(true); // Still resolve true if executable exists, even if Files folder is missing
-            });
-        });
-    });
 }
 
 /**
