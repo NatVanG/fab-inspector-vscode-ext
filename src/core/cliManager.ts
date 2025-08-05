@@ -230,70 +230,6 @@ export class CliManager {
     }
 
     /**
-     * Forces shutdown of any running CLI processes
-     */
-    private async forceShutdownCli(): Promise<void> {
-        try {
-            const processName = 'PBIRInspectorCLI.exe';
-
-            // Use tasklist to check if the process is running
-            const checkProcess = cp.spawn('tasklist', ['/FI', `IMAGENAME eq ${processName}`, '/FO', 'CSV'], {
-                windowsHide: true
-            });
-
-            let output = '';
-            checkProcess.stdout.on('data', (data) => {
-                output += data.toString();
-            });
-
-            await new Promise<void>((resolve, reject) => {
-                checkProcess.on('close', (code) => {
-                    if (code === 0) {
-                        // Check if process is found in output
-                        if (output.includes(processName)) {
-                            this.log(`Found running ${processName} process, attempting to terminate...`);
-
-                            // Force kill the process
-                            const killProcess = cp.spawn('taskkill', ['/F', '/IM', processName], {
-                                windowsHide: true
-                            });
-
-                            killProcess.on('close', (killCode) => {
-                                if (killCode === 0) {
-                                    this.log(`Successfully terminated ${processName}`);
-                                } else {
-                                    this.logWarn(`Failed to terminate ${processName}, exit code: ${killCode}`);
-                                }
-                                // Wait a moment for the process to fully terminate
-                                setTimeout(resolve, 1000);
-                            });
-
-                            killProcess.on('error', (error) => {
-                                this.logWarn(`Error terminating ${processName}: ${error}`);
-                                resolve(); // Continue anyway
-                            });
-                        } else {
-                            this.log(`No running ${processName} process found`);
-                            resolve();
-                        }
-                    } else {
-                        this.logWarn(`Failed to check for running ${processName} process, exit code: ${code}`);
-                        resolve(); // Continue anyway
-                    }
-                });
-
-                checkProcess.on('error', (error) => {
-                    this.logWarn(`Error checking for running ${processName} process: ${error}`);
-                    resolve(); // Continue anyway
-                });
-            });
-        } catch (error) {
-            this.logWarn(`Error in forceShutdownCli: ${error}`);
-            // Don't throw - we want the download to continue even if shutdown fails
-        }
-    }
-
-    /**
      * Downloads and extracts the CLI
      */
     private async downloadCli(): Promise<void> {
@@ -326,10 +262,6 @@ export class CliManager {
                         increment: 0,
                         message: `Downloading CLI... ${retryCount > 0 ? `(attempt ${retryCount + 1}/${this.maxRetries})` : ''}`
                     });
-
-                    // Force shutdown any running CLI processes first
-                    progress.report({ increment: 5, message: "Shutting down running processes..." });
-                    await this.forceShutdownCli();
 
                     // Ensure bin directory exists
                     if (!fs.existsSync(this.cliDirectory)) {
@@ -485,7 +417,6 @@ export class CliManager {
      * Forces a CLI update by invalidating the cache
      */
     public async forceUpdate(): Promise<string> {
-        await this.forceShutdownCli();
         await this.cleanupOldCliFiles();
         return this.downloadCli().then(() => this.cliExecutable);
     }
