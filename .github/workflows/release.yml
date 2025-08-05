@@ -48,8 +48,8 @@ jobs:
     - name: Install vsce
       run: npm install -g @vscode/vsce
 
-    - name: Package extension
-      run: vsce package
+    - name: Build (webpack production)
+      run: npm run webpack:prod
 
     - name: Create and push tag
       run: |

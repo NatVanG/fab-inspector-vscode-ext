@@ -41,6 +41,9 @@ jobs:
     - name: Install vsce (VS Code Extension Manager)
       run: npm install -g @vscode/vsce
 
+    - name: Build (webpack production)
+      run: npm run webpack:prod
+
     - name: Package extension
       run: vsce package
 
