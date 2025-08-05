@@ -4,7 +4,6 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as https from 'https';
 import * as cp from 'child_process';
-import * as crypto from 'crypto';
 import { getOutputChannel } from '../utils/outputChannel';
 import { SecurityUtils } from '../utils/securityUtils';
 
@@ -358,10 +357,7 @@ export class CliManager {
 
                     const zipPath = path.join(this.cliDirectory, 'cli-temp.zip');
                     await this.downloadFile(cliUrl, zipPath);
-
-                    // TODO: Validate checksum of the downloaded zip file before extraction
-                    //await this.validateCliChecksum(zipPath);
-
+                    
                     progress.report({ increment: 50, message: "Extracting..." });
 
                     // Extract ZIP using require with error handling
@@ -527,83 +523,82 @@ export class CliManager {
         return info;
     }
 
-    // In your cliManager.ts, make sure you have proper validation
+    // Extract ZIP using PowerShell
     private async extractZip(zipPath: string, extractPath: string): Promise<void> {
-        const AdmZip = require('adm-zip');
-        const zip = new AdmZip(zipPath);
-
-        // Log what's in the ZIP file
-        const entries = zip.getEntries();
-
-        for (const entry of entries) {
-            // Check for path traversal attacks
-            if (entry.entryName.includes('..')) {
-                throw new Error('Invalid zip entry: path traversal detected');
-            }
-        }
-
-        // Extract files from win-x64/CLI/ to bin root
-        for (const entry of entries) {
-            if (entry.entryName.startsWith('win-x64/CLI/') && !entry.entryName.includes('Files/')) {
-                // Extract root CLI files (not in Files folder)
-                if (!entry.isDirectory) {
-                    const fileName = path.basename(entry.entryName);
-                    const outputPath = path.join(this.cliDirectory, fileName);
-                    fs.writeFileSync(outputPath, entry.getData());
-                }
-            }
-            // Extract Files folder and preserve its internal structure
-            else if (entry.entryName.startsWith('win-x64/CLI/Files/')) {
-                // Remove 'win-x64/CLI/' prefix to get 'Files/...' structure
-                const relativePath = entry.entryName.replace('win-x64/CLI/', '');
-                const outputPath = path.join(this.cliDirectory, relativePath);
-
-                if (entry.isDirectory) {
-                    fs.mkdirSync(outputPath, { recursive: true });
-                } else {
-                    // Ensure parent directory exists
-                    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-                    fs.writeFileSync(outputPath, entry.getData());
-                }
-            }
-        }
-    }
-
-    /**
-     * Calculates the SHA256 checksum of a file
-     */
-    private calculateFileChecksum(filePath: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            const hash = crypto.createHash('sha256');
-            const stream = fs.createReadStream(filePath);
-            stream.on('data', (data) => hash.update(data));
-            stream.on('end', () => resolve(hash.digest('hex')));
-            stream.on('error', (err) => reject(err));
+            // Create a temporary extraction directory
+            const tempExtractPath = path.join(extractPath, 'temp-extract');
+            
+            // PowerShell command to extract ZIP
+            const powershellCommand = `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${tempExtractPath}' -Force"`;
+            
+            cp.exec(powershellCommand, { windowsHide: true }, async (error, stdout, stderr) => {
+                if (error) {
+                    this.logError(`PowerShell extraction failed: ${error.message}`);
+                    reject(new Error(`ZIP extraction failed: ${error.message}`));
+                    return;
+                }
+
+                try {
+                    // Move files from win-x64/CLI/ to bin root, preserving structure
+                    const sourcePath = path.join(tempExtractPath, 'win-x64', 'CLI');
+                    
+                    if (!fs.existsSync(sourcePath)) {
+                        throw new Error('Expected win-x64/CLI folder not found in extracted content');
+                    }
+
+                    // Read all items in the CLI folder
+                    const items = fs.readdirSync(sourcePath, { withFileTypes: true });
+                    
+                    for (const item of items) {
+                        const sourceItemPath = path.join(sourcePath, item.name);
+                        const destItemPath = path.join(extractPath, item.name);
+                        
+                        if (item.isDirectory()) {
+                            // Copy directory recursively (like Files folder)
+                            await this.copyDirectory(sourceItemPath, destItemPath);
+                        } else {
+                            // Copy file directly to bin root
+                            fs.copyFileSync(sourceItemPath, destItemPath);
+                        }
+                    }
+
+                    // Clean up temporary extraction directory
+                    fs.rmSync(tempExtractPath, { recursive: true, force: true });
+                    
+                    resolve();
+                } catch (moveError) {
+                    this.logError(`File movement failed: ${moveError}`);
+                    // Clean up temporary directory on error
+                    try {
+                        fs.rmSync(tempExtractPath, { recursive: true, force: true });
+                    } catch (cleanupError) {
+                        this.logWarn(`Failed to clean up temporary directory: ${cleanupError}`);
+                    }
+                    reject(new Error(`File extraction and movement failed: ${moveError}`));
+                }
+            });
         });
     }
 
     /**
-     * Downloads and validates the checksum for the CLI executable
+     * Recursively copy a directory
      */
-    private async validateCliChecksum(filePath: string): Promise<void> {
-        const checksumUrl = this.getCliUrl().replace(/\.zip$/, '.sha256'); // Adjust if your checksum URL differs
-        const checksumPath = filePath + '.sha256';
-
-        // Download checksum file
-        await this.downloadFile(checksumUrl, checksumPath);
-
-        // Read expected checksum
-        const expectedChecksum = fs.readFileSync(checksumPath, 'utf8').split(' ')[0].trim();
-
-        // Calculate actual checksum
-        const actualChecksum = await this.calculateFileChecksum(filePath);
-
-        // Clean up checksum file
-        fs.unlinkSync(checksumPath);
-
-        // Compare
-        if (expectedChecksum !== actualChecksum) {
-            throw new Error(`Checksum validation failed for CLI zip file. Expected: ${expectedChecksum}, Actual: ${actualChecksum}`);
+    private async copyDirectory(source: string, destination: string): Promise<void> {
+        // Create destination directory
+        fs.mkdirSync(destination, { recursive: true });
+        
+        const items = fs.readdirSync(source, { withFileTypes: true });
+        
+        for (const item of items) {
+            const sourceItemPath = path.join(source, item.name);
+            const destItemPath = path.join(destination, item.name);
+            
+            if (item.isDirectory()) {
+                await this.copyDirectory(sourceItemPath, destItemPath);
+            } else {
+                fs.copyFileSync(sourceItemPath, destItemPath);
+            }
         }
     }
 }
