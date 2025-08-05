@@ -87,12 +87,15 @@ export class CliManager {
             
             // Show fallback warning with manual options
             const selection = await vscode.window.showInformationMessage(
-                'Please install the .NET 8 runtime from link provided or:',
-                'Skip future .NET checks in settings',
+                'Please install the .NET 8+ runtime.',
+                'Download .NET 8',
+                'Skip .NET checks in settings',
                 'Continue Anyway'
             );
 
-            if (selection === 'Skip future .NET checks in settings') {
+            if (selection === 'Download .NET 8') {
+                vscode.env.openExternal(vscode.Uri.parse('https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-8.0.18-windows-x64-installer'));
+            } else if (selection === 'Skip .NET checks in settings') {
                 vscode.commands.executeCommand('workbench.action.openSettings', 'fabInspector');
             }
 
