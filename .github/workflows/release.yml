@@ -50,6 +50,9 @@ jobs:
 
     - name: Build (webpack production)
       run: npm run webpack:prod
+        
+    - name: Package extension
+      run: vsce package
 
     - name: Create and push tag
       run: |
