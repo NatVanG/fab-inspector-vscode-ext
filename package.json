@@ -19,7 +19,6 @@
   ],
   "files": [
     "dist/extension.js",
-    "bin/.keep",
     "icon.png",
     "README.md",
     "LICENSE.txt"

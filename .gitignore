@@ -4,13 +4,7 @@ node_modules
 .vscode-test/
 *.vsix
 .vscodeignore
-# Runtime downloaded CLI files (will be downloaded on demand)
-bin/PBIRInspectorCLI.exe
-bin/libSkiaSharp.dll
-bin/LICENSE
-bin/Files/
-bin/cli-temp.zip
-bin/.download-timestamp
+bin
 IMPLEMENTATION.md
 LICENSE_AUDIT_REPORT.md
 REFACTORING.md

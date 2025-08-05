@@ -190,37 +190,13 @@ Remove log wrapper from JSON operator.
 
 ## 🔧 Extension Settings
 
-### **Accessing Settings**
-
-You can access and modify the extension settings in several ways:
-
-1. **Via Fab Inspector extension UI:**
-   - Open the Fab Inspector extension page in VS Code
-   - Select the cog icon ⚙️
-   - Select `Settings`
-
-2. **Via VS Code Settings UI:**
-   - Open Settings (`Ctrl+,`)
-   - Search for "Fab Inspector"
-   - Modify settings using the UI controls
-
-3. **Via Command Palette:**
-   - Open Command Palette (`Ctrl+Shift+P`)
-   - Type "Preferences: Open Settings (UI)"
-   - Search for "Fab Inspector"
-
-### **Available Settings**
-
+This extension exposes the following settings to VS Code:
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `fabInspector.autoUpdateCli` | boolean | `true` | Automatically check for and download CLI updates |
 | `fabInspector.cliUpdateInterval` | number | `24` | Hours between CLI update checks (when auto-update is enabled) |
 | `fabInspector.cliVersion` | string | `"latest"` | Version of the Fab Inspector CLI to download. Use 'latest' for the most recent release, or specify a version tag like 'v2.4.5' |
-| `fabInspector.rulesFolderName` | string | `"fab-inspector-rules"` | Name of the folder to create for storing Fab Inspector rules. Must be a valid folder name (alphanumeric, hyphens, underscores only) |
-| `fabInspector.skipDotNetCheck` | boolean | `false` | Skip .NET runtime dependency check and installation. Enable this if you already have .NET 8+ installed but the extension fails to detect it |
-| `fabInspector.cliUserConsent` | boolean | `false` | Consent to download and run the Fab Inspector CLI executable. |
-
 
 ### **Command Reference**
 

@@ -28,7 +28,7 @@
       ],
       "preLaunchTask": {
         "type": "npm",
-        "script": "watch:webpack"
+        "script": "compile:webpack"
       }
     },
     {
