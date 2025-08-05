@@ -1,8 +1,10 @@
-# Fab Inspector VS Code Extension
+# Fab Inspector
 
-A Visual Studio Code extension that provides seamless integration with the [Fab Inspector](https://github.com/NatVanG/PBI-InspectorV2) CLI, enabling developers to analyze, inspect, and work with Fab Inspector rules directly from their VS Code workspace.
+A Visual Studio Code extension that provides seamless integration with the [Fab Inspector](https://github.com/NatVanG/PBI-InspectorV2) CLI, enabling developers to analyze and inspect Microsoft Fabric CI/CD items with Fab Inspector rules directly from their VS Code workspace.
 
-The GitHub repository for this extension can be found at https://github.com/NatVanG/fab-inspector-vscode-ext.
+The repository for this extension can be found at https://github.com/NatVanG/fab-inspector-vscode-ext.
+
+The repository for Fab Inspector (previously known as PBI Inspector V2) can be found at https://github.com/NatVanG/PBI-InspectorV2.
 
 > **⚠️ Platform Support**: This extension currently supports **Windows only** and requires the .NET 8+ runtime.
 
@@ -33,19 +35,11 @@ The GitHub repository for this extension can be found at https://github.com/NatV
 - **Internet Connection**: Required for Fab Inspector CLI downloads. 
 
 ### **Installing .NET 8**
-The extension requires .NET 8 runtime to execute the Fab Inspector CLI. You have several options:
+The extension requires .NET 8 runtime to execute the Fab Inspector CLI.
 
-#### **Option 1: Automatic Installation**
-
-The extension will try and check if there is a local .NET 8+ runtime installed and if not it will try to install it. This behaviour can be disabled in the extension's settings.
-
-> **💡 Note**: The extension automatically installs the Microsoft .NET Install Tool extension as a dependency to help with .NET runtime management.
-
-#### **Option 2: Manual Installation**
-1. **Download .NET 8**: Visit [https://dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0)
-2. **Choose Runtime**: Download the ".NET Runtime" (not SDK unless you're developing .NET applications)
+1. **Dependency check**: The extension will try and check if there is a local .NET 8+ runtime installed and if not it will provide a link to download it. This dependency check can be disabled in the extension's settings if you know that the runtime is installed but the extension is unable to detect it.
+2. **Download .NET 8 runtime**: Visit https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-8.0.18-windows-x64-installer
 3. **Install**: Run the installer and follow the setup instructions
-4. **Verify Installation**: Open Command Prompt and run `dotnet --version` to confirm installation
 
 ### **Fabric Inspector CLI**
 - **Automatic Download**: The Fab Inspector CLI is automatically downloaded when first needed from the "CLI" releases published to https://github.com/NatVanG/PBI-InspectorV2/releases.
@@ -55,25 +49,20 @@ The extension will try and check if there is a local .NET 8+ runtime installed a
 > **💡 Note**: Enabling auto-update is recommended to get the latest Fab Inspector CLI fixes and performance improvements.
 
 ### **Workspace Setup**
-- **fab-inspector-rules folder**: Create this folder in your workspace root for rules files. The default folder name can be configured in the extension's settings.
-- **JSON Files**: Rules must be valid Fab Inspector Rules JSON files with `.json` extension
+- **fab-inspector-rules folder**: Create this folder in your workspace root for rules files. The folder name can be configured in the extension's settings, by default it's set to `fab-inspector-rules`.
+- **JSON Files**: Rules must be valid Fab Inspector Rules JSON files (with `.json` extension) stored at the root of the `fab-inspector-rules` folder.
 
-## 📖 Usage Guide
+#### **Rules File Format**
+Your JSON rules files should follow the structure defined by the Fab Inspector (PBI Inspector V2) project, see resources below.
 
-### **1. Command Palette Operations**
-
-#### **Fab Inspector: Run** (Interactive)
-The main inspection command that provides full control over the inspection process.
-
-**How to use:**
-1. Open Command Palette (`Ctrl+Shift+P`)
-2. Type and select `Fab Inspector: Run`
-3. Follow the interactive prompts:
-   - **Select Rules File**: Choose from available `.json` files in your `fab-inspector-rules` folder
-   - **Select Output Format**: Choose between `console` or `html`
-4. View results in the "Fab Inspector" output channel
+**📚 Rule Creation Resources:**
+- **Main Repository**: [PBI Inspector V2](https://github.com/NatVanG/PBI-InspectorV2) - Official Fab Inspector CLI repository
+- **Documentation Wiki**: [PBI Inspector V2 Wiki](https://github.com/NatVanG/PBI-InspectorV2/wiki) - Rule creation guide.
 
 **Example workspace folder:**
+
+Here is an example VS Code workspace folder. Note that, by default, a `fab-inspector-rules` folder must be present at the root of the workspace. In turm, the Fab Inspector rules file(s) must present at the root of the `fab-inspector-rules` folder. The default `fab-inspector-rules` folder can be renamed via the extension's settings.
+
 ```
 📁 workspace/
 ├── 📁 fab-inspector-rules/
@@ -92,14 +81,31 @@ The main inspection command that provides full control over the inspection proce
 │   │   └── .platform
 ```
 
+**Sample repository:**
+
+Here is an example repository with sample Microsoft Fabric CI/CD items and rules to get you started with the Fab Inspector VS Code extension: https://github.com/NatVanG/fab-inspector-cicd-example.
+
+## 📖 Extension Usage Guide
+
+### **1. Command Palette Operations**
+
+#### **Fab Inspector: Run** (Interactive)
+The main inspection command that provides the ability to define output formats.
+
+**How to use:**
+1. Open Command Palette (`Ctrl+Shift+P`)
+2. Type and select `Fab Inspector: Run`
+3. Follow the interactive prompts:
+   - **Select Rules File**: Choose from available `.json` files in your `fab-inspector-rules` folder
+   - **Select Output Format**: Choose between `console` or `html`. The `console` format logs test results to the "Fab Inspector" extension output channel in VS Code. The `html` option opens a browser page with locally generated HTML test results.
+
 #### **Fab Inspector: Update CLI**
-Manually download and update the Fab Inspector CLI to the latest version.
+Manually download or update the Fab Inspector CLI to the latest version or the version specified in the extension's settings.
 
 **How to use:**
 1. Open Command Palette (`Ctrl+Shift+P`)
 2. Type and select `Fab Inspector: Update CLI`
-3. The extension will download and install the latest CLI version
-4. View progress and results in the "Fab Inspector" output channel
+3. The extension will download and install the latest Fab Inspector CLI version or the version specified in the extension's settings.
 
 #### **Fab Inspector: Show CLI Info**
 Display information about the current CLI installation and version.
@@ -121,9 +127,18 @@ Quickly execute the currently open rules file without additional prompts.
 4. The extension will automatically execute the current rules file with GitHub-compatible output format
 
 **Requirements:**
-- File must be located at the root of the `fab-inspector-rules` folder
+- Rules file must be located at the root of the `fab-inspector-rules` folder (itself at the root of the workspace)
 - File must have a `.json` extension
 - File must contain valid Fab Inspector Rules JSON definition
+
+#### **Fab Inspector: Run Selected Rule** (Single Rule Testing)
+Execute individual rules for quick testing or rule debugging.
+
+**How to use:**
+1. Select either a complete rule definition in your JSON editor or select the rule ID.
+2. Right-click the selection
+3. Choose `Fab Inspector: Run Selected Rule`
+4. The extension will create a temporary rules file and execute just that rule
 
 #### **Fab Inspector: Log Wrap** (JSON Wrapping)
 Wrap selected JSON fragments with a log node for debugging or enhanced logging.
@@ -150,7 +165,7 @@ Wrap selected JSON fragments with a log node for debugging or enhanced logging.
 ```
 
 #### **Fab Inspector: Log Unwrap** (JSON Unwrapping)
-Remove log wrapper nodes from JSON, extracting the inner content.
+Remove log wrapper from JSON operator.
 
 **How to use:**
 1. Select a JSON object that contains a `log` node
@@ -173,34 +188,42 @@ Remove log wrapper nodes from JSON, extracting the inner content.
 }
 ```
 
-#### **Fab Inspector: Run Selected Rule** (Single Rule Testing)
-Execute individual rules for quick testing and validation.
-
-**How to use:**
-1. Select a complete rule definition in your JSON editor or select the rule ID.
-2. Right-click the selection
-3. Choose `Fab Inspector: Run Selected Rule`
-4. The extension will create a temporary rules file and execute just that rule
-
-#### **Rules File Format**
-Your JSON rules files should follow the structure defined by the Fab Inspector (PBI Inspector V2) project. 
-
-**📚 Rule Creation Resources:**
-- **Main Repository**: [PBI Inspector V2](https://github.com/NatVanG/PBI-InspectorV2) - Official Fab Inspector CLI repository
-- **Documentation Wiki**: [PBI Inspector V2 Wiki](https://github.com/NatVanG/PBI-InspectorV2/wiki) - Comprehensive rule creation guide
-- **Rule Examples**: Browse the repository for sample rules and validation logic
-- **JSON Logic Reference**: Learn about JSON Logic syntax used in rule definitions
 ## 🔧 Extension Settings
 
-This extension contributes the following settings to VS Code:
+### **Accessing Settings**
+
+You can access and modify the extension settings in several ways:
+
+1. **Via Fab Inspector extension UI:**
+   - Open the Fab Inspector extension page in VS Code
+   - Select the cog icon ⚙️
+   - Select `Settings`
+
+2. **Via VS Code Settings UI:**
+   - Open Settings (`Ctrl+,`)
+   - Search for "Fab Inspector"
+   - Modify settings using the UI controls
+
+3. **Via Command Palette:**
+   - Open Command Palette (`Ctrl+Shift+P`)
+   - Type "Preferences: Open Settings (UI)"
+   - Search for "Fab Inspector"
+
+### **Available Settings**
+
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `fabInspector.autoUpdateCli` | boolean | `true` | Automatically check for and download CLI updates |
 | `fabInspector.cliUpdateInterval` | number | `24` | Hours between CLI update checks (when auto-update is enabled) |
-| `fabInspector.cliVersion` | string | `"latest"` | Version of the Fab Inspector CLI to download. Use 'latest' for the most recent release, or specify a version tag like 'v2.4.3' |
+| `fabInspector.cliVersion` | string | `"latest"` | Version of the Fab Inspector CLI to download. Use 'latest' for the most recent release, or specify a version tag like 'v2.4.5' |
+| `fabInspector.rulesFolderName` | string | `"fab-inspector-rules"` | Name of the folder to create for storing Fab Inspector rules. Must be a valid folder name (alphanumeric, hyphens, underscores only) |
+| `fabInspector.skipDotNetCheck` | boolean | `false` | Skip .NET runtime dependency check and installation. Enable this if you already have .NET 8+ installed but the extension fails to detect it |
+| `fabInspector.cliUserConsent` | boolean | `false` | Consent to download and run the Fab Inspector CLI executable. |
+
 
 ### **Command Reference**
+
 | Command | ID | Trigger | Context | Description |
 |---------|-----|---------|---------|-------------|
 | `Fab Inspector: Run` | `fab-inspector.inspect` | Command Palette | Any time | Interactive inspection with full options |
@@ -215,6 +238,9 @@ This extension contributes the following settings to VS Code:
 
 ### **Common Issues**
 
+#### **".NET 8+ runtime not installed"** ####
+- ✅ Download and install the [.NET 8 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-8.0.18-windows-x64-installer). Once installed it a reboot might be needed or ignore subsequent .NET checks error messages as the extension should now be running without issues.
+
 #### **"No rules files found"**
 - ✅ Ensure `fab-inspector-rules` folder exists in workspace root
 - ✅ Verify files have `.json` extension
@@ -223,7 +249,7 @@ This extension contributes the following settings to VS Code:
 #### **"Right-click commands not appearing"**
 - ✅ Ensure you're working with a `.json` file
 - ✅ For selection-based commands, make sure a valid JSON fragment or rule ID is selected
-- ✅ For rules file execution, ensure file is in `fab-inspector-rules` folder
+- ✅ For rules file execution, ensure file is in the `fab-inspector-rules` folder
 
 #### **"Rule execution failed"**
 - ✅ Verify rule has valid JSON Logic syntax
@@ -250,12 +276,12 @@ This extension contributes the following settings to VS Code:
 ## 🔄 Known Issues and Limitations
 
 ### **Current Limitations**
-- **Platform Support**: Windows only
-- **CLI Dependency**: Requires internet connection for initial CLI download
+- **Platform Support**: Windows 64-bit only.
+- **CLI Dependency**: Requires internet connection for initial CLI download and the .NET 8 runtime or above.
 - **JSON Rules Only**: Rules files must be valid JSON (JSONC/comments not supported)
 ---
 
-## ** Feedback**
+## **Feedback**
 
 If you encounter issues or have suggestions for improvements, please:
 - Check the troubleshooting section above
