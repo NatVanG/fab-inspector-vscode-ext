@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { spawn } from 'child_process';
 import { ensureCliAvailable } from '../utils/fileUtils';
 import { getOutputChannel } from '../utils/outputChannel';
-import { SecurityUtils } from '../utils/securityUtils';
+import { ValidationUtils } from '../utils/validationUtils';
 
 /**
  * Run Fab Inspector with the provided parameters
@@ -14,7 +14,7 @@ export async function runFabInspector(context: vscode.ExtensionContext, fabricIt
     if (!rulesPath.includes('fab-inspector-temp-rule') && !fs.existsSync(rulesPath)) {
         const rulesDir = path.dirname(rulesPath);
         const rulesFile = path.basename(rulesPath);
-        const rulesFolderName = SecurityUtils.getConfiguredRulesFolderName();
+        const rulesFolderName = ValidationUtils.getConfiguredRulesFolderName();
 
         if (!fs.existsSync(rulesDir)) {
             vscode.window.showErrorMessage(`The "${rulesFolderName}" folder was not found in the workspace. Please create this folder at the root of your workspace and add your rules files.`);
@@ -52,16 +52,16 @@ export async function runNativeCommand(executablePath: string, fabricItemPath: s
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         
         // Validate file paths
-        const safeFabricItemPath = SecurityUtils.validateFilePath(fabricItemPath, workspaceRoot);
-        const safeRulesPath = SecurityUtils.validateFilePath(rulesPath, workspaceRoot);
+        const safeFabricItemPath = ValidationUtils.validateFilePath(fabricItemPath, workspaceRoot);
+        const safeRulesPath = ValidationUtils.validateFilePath(rulesPath, workspaceRoot);
         
         // Validate file extensions
-        if (!SecurityUtils.validateFileExtension(safeRulesPath, ['.json'])) {
+        if (!ValidationUtils.validateFileExtension(safeRulesPath, ['.json'])) {
             throw new Error('Rules file must have .json extension');
         }
         
         // Sanitize format string
-        const safeFormats = SecurityUtils.sanitizeCommandArg(formats);
+        const safeFormats = ValidationUtils.sanitizeCommandArg(formats);
         
         const rulesFileName = path.basename(safeRulesPath);
 

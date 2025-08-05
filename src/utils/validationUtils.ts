@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 
-export class SecurityUtils {
+export class ValidationUtils {
     /**
      * Validates and sanitizes file paths to prevent directory traversal
      */

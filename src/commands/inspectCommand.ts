@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { runFabInspector } from '../core/fabInspector';
-import { SecurityUtils } from '../utils/securityUtils';
+import { ValidationUtils } from '../utils/validationUtils';
 
 /**
  * Register and return the main Fab Inspector command
@@ -17,7 +17,7 @@ export function registerInspectCommand(context: vscode.ExtensionContext): vscode
         const fabricItem = workspaceFolder.uri.fsPath;
 
         // Prompt user for rules file and formats
-        const rulesFolderName = SecurityUtils.getConfiguredRulesFolderName();
+        const rulesFolderName = ValidationUtils.getConfiguredRulesFolderName();
         const rulesFile = await vscode.window.showInputBox({
             placeHolder: `Enter the name of the rules file within your ${rulesFolderName} folder (e.g., rules.json)`,
             prompt: 'Rules File Path',
@@ -26,7 +26,7 @@ export function registerInspectCommand(context: vscode.ExtensionContext): vscode
                     return 'Rules file path cannot be empty.';
                 }
                 try {
-                    SecurityUtils.validateRulesFileName(value);
+                    ValidationUtils.validateRulesFileName(value);
                     return null;
                 } catch (error) {
                     return error instanceof Error ? error.message : 'Invalid file name format';

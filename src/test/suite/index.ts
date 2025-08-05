@@ -1,3 +1,3 @@
-// Simple test runner for security utils tests
-export * from './securityUtils.test';
+// Simple test runner for validation utils tests
+export * from './validationUtils.test';
 export * from './folderValidation.test';
