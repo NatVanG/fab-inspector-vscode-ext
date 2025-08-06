@@ -6,15 +6,15 @@ on:
       release_type:
         description: 'Release type'
         required: true
-        default: 'patch'
+        default: 'current'
         type: choice
         options:
           - patch
           - minor
           - major
           - current
-  release:
-    types: [published]
+  push:
+    branches: [ Pruned-for-publish-testing ]
 
 jobs:
   publish:
