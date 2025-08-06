@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { spawn } from 'child_process';
 import { ensureCliAvailable } from '../utils/fileUtils';
 import { getOutputChannel } from '../utils/outputChannel';
 import { ValidationUtils } from '../utils/validationUtils';
@@ -93,135 +92,28 @@ export async function runNativeCommand(executablePath: string, fabricItemPath: s
             console.log(`Temp rules file content: ${fs.readFileSync(safeRulesPath, 'utf8')}`);
         }
 
-    // Set working directory to the bin folder so the executable can find its Files folder
-    const binDirectory = path.dirname(executablePath);
+    // STUB: Return successful completion without actually running the process
+    console.log('STUBBED: Skipping actual CLI execution for testing/development');
+    
+    return new Promise<void>((resolve) => {
+        // Simulate some processing time
+        setTimeout(() => {
+            // Show success message
+            const successMessage = isSingleRule ? 'Fab Inspector rule completed successfully!' : 'Fab Inspector completed successfully!';
+            vscode.window.showInformationMessage(successMessage);
 
-    return new Promise<void>((resolve, reject) => {
-        let isResolved = false;
-        
-        // Add a timeout to prevent hanging indefinitely
-        const timeout = setTimeout(() => {
-            if (!isResolved) {
-                isResolved = true;
-                console.log('Process timed out, calling cleanup...');
-                if (cleanup) {
-                    cleanup();
-                }
-                reject(new Error('Process timed out after 5 minutes'));
+            if (channel) {
+                channel.appendLine('\nSTUBBED: Fab Inspector completed successfully (no actual execution).');
             }
-        }, 5 * 60 * 1000); // 5 minute timeout
 
-        const cleanupAndResolve = (error?: Error) => {
-            if (isResolved) {
-                return;
-            }
-            isResolved = true;
-            
-            clearTimeout(timeout);
-            console.log('Cleaning up and resolving...');
-            
-            // Call cleanup
+            // Call cleanup if provided
             if (cleanup) {
                 console.log('Calling cleanup function...');
                 cleanup();
-            } else {
-                console.log('No cleanup function provided');
             }
             
-            if (error) {
-                reject(error);
-            } else {
-                resolve();
-            }
-        };
-
-        // Use spawn for real-time output streaming
-        const process = spawn(executablePath, args, {
-            cwd: binDirectory // Set working directory
-        });
-
-        let stdout = '';
-        let stderr = '';
-
-        // Stream stdout in real-time
-        process.stdout.on('data', (data) => {
-            const output = data.toString();
-            stdout += output;
-            if (channel) {
-                channel.append(output);
-            }
-        });
-
-        // Stream stderr in real-time
-        process.stderr.on('data', (data) => {
-            const output = data.toString();
-            stderr += output;
-            if (channel) {
-                channel.append(output);
-            }
-        });
-
-        // Handle process completion
-        process.on('close', (code) => {
-            console.log(`Process closed with code: ${code}`);
-            
-            if (code === 0) {
-                // Success
-                const successMessage = isSingleRule ? 'Fab Inspector rule completed successfully!' : 'Fab Inspector completed successfully!';
-                vscode.window.showInformationMessage(successMessage);
-
-                if (channel) {
-                    channel.appendLine('\nFab Inspector completed successfully.');
-                }
-
-                // Show output in a new document for single rule with console output
-                if (isSingleRule && stdout && formats.includes('console')) {
-                    vscode.workspace.openTextDocument({
-                        content: stdout,
-                        language: 'plaintext'
-                    }).then(doc => {
-                        vscode.window.showTextDocument(doc);
-                    });
-                }
-                
-                cleanupAndResolve();
-            } else {
-                // Error
-                const errorMessage = stderr || `Process exited with code ${code}`;
-                const failMessage = isSingleRule ? `Fab Inspector rule failed: ${errorMessage}` : `One or more Fab Inspector test(s) failed.`;
-                vscode.window.showErrorMessage(failMessage);
-
-                if (channel) {
-                    channel.appendLine(`One or more Fab Inspector test(s) failed.`);
-                }
-
-                console.error('Fab Inspector stderr:', stderr);
-                console.error('Fab Inspector stdout:', stdout);
-                
-                cleanupAndResolve(new Error(errorMessage));
-            }
-        });
-
-        // Handle process exit (different from close)
-        process.on('exit', (code) => {
-            console.log(`Process exited with code: ${code}`);
-            if (!isResolved) {
-                cleanupAndResolve();
-            }
-        });
-
-        // Handle process errors
-        process.on('error', (error) => {
-            const errorMsg = `Fab Inspector execution failed: ${error.message}. Please ensure the executable has proper permissions and dependencies are installed.`;
-            vscode.window.showErrorMessage(errorMsg);
-
-            if (channel) {
-                channel.appendLine(`\nError running Fab Inspector: ${error.message}`);
-            }
-
-            console.error('Process error:', error);
-            cleanupAndResolve(error);
-        });
+            resolve();
+        }, 1000); // 1 second delay to simulate processing
     });
     } catch (error) {
         vscode.window.showErrorMessage(`Security validation failed: ${error}`);

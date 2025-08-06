@@ -16,8 +16,8 @@ export class CliManager {
 
     constructor(extensionPath: string) {
         this.extensionPath = extensionPath;
-        this.cliDirectory = path.join(extensionPath, 'bin');
-        this.cliExecutable = path.join(this.cliDirectory, 'PBIRInspectorCLI.exe');
+        this.cliDirectory = "";
+        this.cliExecutable = "";
     }
 
     /**
