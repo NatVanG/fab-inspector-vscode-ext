@@ -8,10 +8,6 @@
   "engines": {
     "vscode": "^1.102.0"
   },
-  "categories": [
-    "Linters",
-    "Testing"
-  ],
   "keywords": [
     "fabric",
     "microsoftfabric",
