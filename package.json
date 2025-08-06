@@ -161,6 +161,7 @@
     "url": "https://github.com/NatVanG/fab-inspector-vscode-ext/issues"
   },
   "author": {
-    "name": "Nat Van Gulck"
+    "name": "Nat Van Gulck",
+    "email": "nat@vangulck.com"
   }
 }

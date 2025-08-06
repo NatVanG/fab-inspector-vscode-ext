@@ -54,12 +54,7 @@ export class CliManager {
         // Validate version to prevent URL manipulation
         const safeVersion = ValidationUtils.validateCliVersion(version);
 
-        if (safeVersion === 'latest') {
-            return 'https://github.com/NatVanG/PBI-InspectorV2/releases/latest/download/win-x64-CLI.zip';
-        }
-        else {
-            return `https://github.com/NatVanG/PBI-InspectorV2/releases/download/${safeVersion}/win-x64-CLI.zip`;
-        }
+        return '';
     }
 
     /**
@@ -94,7 +89,7 @@ export class CliManager {
             );
 
             if (selection === 'Download .NET 8') {
-                vscode.env.openExternal(vscode.Uri.parse('https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-8.0.18-windows-x64-installer'));
+                vscode.env.openExternal(vscode.Uri.parse(''));
             } else if (selection === 'Skip .NET checks in settings') {
                 vscode.commands.executeCommand('workbench.action.openSettings', 'fabInspector');
             }
@@ -118,59 +113,7 @@ export class CliManager {
      * Checks if .NET 8+ is already installed on the system
      */
     private async checkExistingDotNet(): Promise<string | null> {
-        const errorMessage = '.NET 8+ runtime is not available or failed to start.';
-        return new Promise((resolve) => {
-            let dotnetProcess: cp.ChildProcess | null = null;
-            try {
-                dotnetProcess = cp.spawn('dotnet', ['--list-runtimes'], {
-                    windowsHide: true
-                });
-            } catch (error) {
-                this.logWarn(errorMessage);
-                resolve(null);
-                return;
-            }
-
-            if (!dotnetProcess || !dotnetProcess.stdout) {
-                this.logWarn(errorMessage);
-                resolve(null);
-                return;
-            }
-
-            let output = '';
-            dotnetProcess.stdout.on('data', (data) => {
-                output += data.toString();
-            });
-
-            dotnetProcess.on('close', (code) => {
-                if (code === 0) {
-                    // Look for a line like: Microsoft.NETCore.App 8.0.0 [C:\...]
-                    const lines = output.split(/\r?\n/);
-                    const found = lines.find(line => {
-                        const match = line.match(/^Microsoft\.NETCore\.App\s+(\d+)\.(\d+)\.(\d+)/);
-                        if (match) {
-                            const majorVersion = parseInt(match[1]);
-                            return majorVersion >= 8;
-                        }
-                        return false;
-                    });
-                    if (found) {
-                        resolve('dotnet');
-                    } else {
-                        this.log(errorMessage);
-                        resolve(null);
-                    }
-                } else {
-                    this.logWarn(errorMessage);
-                    resolve(null);
-                }
-            });
-
-            dotnetProcess.on('error', (err) => {
-                this.logWarn(errorMessage);
-                resolve(null);
-            });
-        });
+        return null; // Placeholder for actual implementation
     }
 
 
