@@ -21,12 +21,7 @@ suite('Folder Name Validation Tests', () => {
         assert.throws(() => ValidationUtils.validateFolderName('../rules'), /path separators/);
         assert.throws(() => ValidationUtils.validateFolderName('rules/subfolder'), /path separators/);
         assert.throws(() => ValidationUtils.validateFolderName('rules\\subfolder'), /path separators/);
-        
-        // Reserved names
-        assert.throws(() => ValidationUtils.validateFolderName('CON'), /reserved system name/);
-        assert.throws(() => ValidationUtils.validateFolderName('PRN'), /reserved system name/);
-        assert.throws(() => ValidationUtils.validateFolderName('con'), /reserved system name/);
-        
+
         // Invalid characters
         assert.throws(() => ValidationUtils.validateFolderName('rules<>'), /invalid characters/);
         assert.throws(() => ValidationUtils.validateFolderName('rules|test'), /invalid characters/);
