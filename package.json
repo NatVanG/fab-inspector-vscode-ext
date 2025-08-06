@@ -2,7 +2,7 @@
   "name": "fab-inspector",
   "displayName": "Fab Inspector",
   "description": "Analyze and inspect Microsoft Fabric CI/CD items directly within VS Code. Requires .NET 8+ runtime.",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "publisher": "NatVanG",
   "license": "MIT",
   "engines": {

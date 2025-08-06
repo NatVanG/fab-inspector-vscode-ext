@@ -48,7 +48,18 @@ export class CliManager {
      * Gets the CLI download URL based on the configured version
      */
     private getCliUrl(): string {
-        return 'https://github.com/NatVanG/PBI-InspectorV2/releases/latest/download/win-x64-CLI.zip';
+        const config = vscode.workspace.getConfiguration('fabInspector');
+        const version = config.get<string>('cliVersion', 'latest');
+
+        // Validate version to prevent URL manipulation
+        const safeVersion = ValidationUtils.validateCliVersion(version);
+
+        if (safeVersion === 'latest') {
+            return 'https://github.com/NatVanG/PBI-InspectorV2/releases/latest/download/win-x64-CLI.zip';
+        }
+        else {
+            return `https://github.com/NatVanG/PBI-InspectorV2/releases/download/${safeVersion}/win-x64-CLI.zip`;
+        }
     }
 
     /**
@@ -73,7 +84,7 @@ export class CliManager {
                 this.log(`Found existing .NET 8+ runtime: ${existingDotNet}`);
                 return existingDotNet;
             }
-            
+
             // Show fallback warning with manual options
             const selection = await vscode.window.showInformationMessage(
                 'Please install the .NET 8+ runtime.',
@@ -449,10 +460,10 @@ export class CliManager {
         return new Promise((resolve, reject) => {
             // Create a temporary extraction directory
             const tempExtractPath = path.join(extractPath, 'temp-extract');
-            
+
             // PowerShell command to extract ZIP
             const powershellCommand = `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${tempExtractPath}' -Force"`;
-            
+
             cp.exec(powershellCommand, { windowsHide: true }, async (error, stdout, stderr) => {
                 if (error) {
                     this.logError(`PowerShell extraction failed: ${error.message}`);
@@ -463,18 +474,18 @@ export class CliManager {
                 try {
                     // Move files from win-x64/CLI/ to bin root, preserving structure
                     const sourcePath = path.join(tempExtractPath, 'win-x64', 'CLI');
-                    
+
                     if (!fs.existsSync(sourcePath)) {
                         throw new Error('Expected win-x64/CLI folder not found in extracted content');
                     }
 
                     // Read all items in the CLI folder
                     const items = fs.readdirSync(sourcePath, { withFileTypes: true });
-                    
+
                     for (const item of items) {
                         const sourceItemPath = path.join(sourcePath, item.name);
                         const destItemPath = path.join(extractPath, item.name);
-                        
+
                         if (item.isDirectory()) {
                             // Copy directory recursively (like Files folder)
                             await this.copyDirectory(sourceItemPath, destItemPath);
@@ -486,7 +497,7 @@ export class CliManager {
 
                     // Clean up temporary extraction directory
                     fs.rmSync(tempExtractPath, { recursive: true, force: true });
-                    
+
                     resolve();
                 } catch (moveError) {
                     this.logError(`File movement failed: ${moveError}`);
@@ -508,13 +519,13 @@ export class CliManager {
     private async copyDirectory(source: string, destination: string): Promise<void> {
         // Create destination directory
         fs.mkdirSync(destination, { recursive: true });
-        
+
         const items = fs.readdirSync(source, { withFileTypes: true });
-        
+
         for (const item of items) {
             const sourceItemPath = path.join(source, item.name);
             const destItemPath = path.join(destination, item.name);
-            
+
             if (item.isDirectory()) {
                 await this.copyDirectory(sourceItemPath, destItemPath);
             } else {
