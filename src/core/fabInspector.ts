@@ -73,7 +73,10 @@ export async function runNativeCommand(executablePath: string, fabricItemPath: s
             channel.clear();
             channel.show();
             channel.appendLine('Starting Fab Inspector...');
-            channel.appendLine(`Executable: ${executablePath}`);
+            const extIndex = executablePath.indexOf('extensions');
+            if (extIndex !== -1) {
+                channel.appendLine(`Executable: ${executablePath.substring(extIndex)}`);
+            }
             channel.appendLine(`Fabric Item Path: ${safeFabricItemPath}`);
             channel.appendLine(`Rules File: ${safeRulesPath}`);
             channel.appendLine(`Formats: ${safeFormats}`);

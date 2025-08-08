@@ -2,7 +2,7 @@
   "name": "fab-inspector",
   "displayName": "Fab Inspector",
   "description": "Develop, debug and run Fab Inspector unit tests for Microsoft Fabric CI/CD items directly within VS Code.",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "publisher": "NatVanG",
   "license": "MIT",
   "engines": {

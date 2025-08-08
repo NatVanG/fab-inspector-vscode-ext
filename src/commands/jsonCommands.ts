@@ -30,7 +30,7 @@ export function registerWrapWithLogCommand(): vscode.Disposable {
         // Parse and re-stringify to ensure proper formatting
         const parsedJson = JSON.parse(selectedText);
         const wrappedJson = {
-            "log": parsedJson
+            "log": { "cat": ["DEBUG: ", parsedJson] }
         };
 
         // Format the wrapped JSON with proper indentation
@@ -69,6 +69,7 @@ export function registerUnwrapLogCommand(): vscode.Disposable {
 
         // Validate that the selected text is valid JSON
         let parsedJson;
+        let innerJson;
         try {
             parsedJson = JSON.parse(selectedText);
         } catch (error) {
@@ -83,7 +84,16 @@ export function registerUnwrapLogCommand(): vscode.Disposable {
         }
 
         // Extract the inner JSON from the log node
-        const innerJson = parsedJson.log;
+        innerJson = parsedJson.log;
+
+        // Check if the JSON has a "log" property and "cat" array
+        if (innerJson && Array.isArray(innerJson.cat) && innerJson.cat.length > 1) {
+            // Unwrap the second element (the original JSON fragment)
+            innerJson = innerJson.cat[1];
+        } else if (innerJson && innerJson.hasOwnProperty('cat')) {
+            // Fallback: just use the cat property
+            innerJson = innerJson.cat;
+        }
 
         // Format the unwrapped JSON with proper indentation
         const formattedJson = JSON.stringify(innerJson, null, 2);

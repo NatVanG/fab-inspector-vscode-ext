@@ -1,16 +1,21 @@
-# Fab Inspector
+[![Build Extension](https://github.com/NatVanG/fab-inspector-vscode-ext/actions/workflows/build.yml/badge.svg)](https://github.com/NatVanG/fab-inspector-vscode-ext/actions/workflows/build.yml)
+[![Release Extension](https://github.com/NatVanG/fab-inspector-vscode-ext/actions/workflows/release.yml/badge.svg)](https://github.com/NatVanG/fab-inspector-vscode-ext/actions/workflows/release.yml)
 
-A Visual Studio Code extension that provides seamless integration with the [Fab Inspector](https://github.com/NatVanG/PBI-InspectorV2) CLI, enabling developers to analyze and inspect Microsoft Fabric CI/CD items with Fab Inspector rules directly from their VS Code workspace.
+# Fab Inspector for VS Code
+
+A Visual Studio Code extension that provides a seamless integration with the [Fab Inspector](https://github.com/NatVanG/PBI-InspectorV2) CLI executable, enabling developers to analyze and inspect Microsoft Fabric CI/CD items with Fab Inspector rules directly from their VS Code workspace.
+
+> **✏️ NOTE** This is a community project that is not supported by Microsoft.
 
 The repository for this extension can be found at https://github.com/NatVanG/fab-inspector-vscode-ext.
 
-The repository for Fab Inspector (previously known as PBI Inspector V2) can be found at https://github.com/NatVanG/PBI-InspectorV2.
+The repository for Fab Inspector (also known as PBI Inspector V2 - full name change pending) can be found at https://github.com/NatVanG/PBI-InspectorV2.
 
 > **⚠️ Platform Support**: This extension currently supports **Windows only** and requires the .NET 8+ runtime.
 
 ## 🚀 Features
 
-### **📋 Fabric Inspection Commands**
+### **📋 Commands**
 - **Fab Inspector: Run** - Interactive inspection with customizable output formats and full control
 - **Fab Inspector: Run Current Rules** - Quick execution of the currently open rules file  
 - **Fab Inspector: Run Selected Rule** - Execute individual rules for quick testing and validation
@@ -41,7 +46,7 @@ The extension requires .NET 8 runtime to execute the Fab Inspector CLI.
 2. **Download .NET 8 runtime**: Visit https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-8.0.18-windows-x64-installer
 3. **Install**: Run the installer and follow the setup instructions
 
-### **Fabric Inspector CLI**
+### **Fab Inspector CLI**
 - **Automatic Download**: The Fab Inspector CLI is automatically downloaded when first needed from the "CLI" releases published to https://github.com/NatVanG/PBI-InspectorV2/releases.
 - **Version Management**: Configurable CLI version selection (latest or specific versions)
 - **Update Management**: Optional auto-updates (enabled by default) with configurable cache expiry intervals
