@@ -1,17 +1,25 @@
 {
   "name": "fab-inspector",
   "displayName": "Fab Inspector",
-  "description": "Analyze and inspect Microsoft Fabric CI/CD items directly within VS Code. Requires .NET 8+ runtime.",
+  "description": "Develop, debug and run Fab Inspector unit tests for Microsoft Fabric CI/CD items directly within VS Code.",
   "version": "0.0.10",
   "publisher": "NatVanG",
   "license": "MIT",
   "engines": {
     "vscode": "^1.102.0"
   },
+  "categories": [
+    "Debuggers",
+    "Linters",
+    "Testing"
+  ],
   "keywords": [
-    "fabric",
-    "microsoftfabric",
-    "powerbi"
+    "Microsoft Fabric",
+    "Power BI",
+    "CI/CD",
+    "unit testing",
+    "debugging",
+    "DevOps"
   ],
   "files": [
     "dist/extension.js",
