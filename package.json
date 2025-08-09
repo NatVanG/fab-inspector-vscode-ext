@@ -2,7 +2,7 @@
   "name": "fab-inspector",
   "displayName": "Fab Inspector",
   "description": "Develop, debug and run Fab Inspector unit tests for Microsoft Fabric CI/CD items directly within VS Code.",
-  "version": "0.0.12",
+  "version": "0.0.14",
   "publisher": "NatVanG",
   "license": "MIT",
   "engines": {
@@ -50,6 +50,10 @@
       {
         "command": "fab-inspector.unwrapLog",
         "title": "Fab Inspector: Log Unwrap"
+      },
+      {
+        "command": "fab-inspector.createNewRulesFile",
+        "title": "Fab Inspector: Create New Rules File"
       },
       {
         "command": "fab-inspector.updateCli",

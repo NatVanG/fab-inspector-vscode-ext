@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { cleanupExistingTempFiles, deactivateCleanup } from './utils/fileUtils';
 import { registerInspectCommand } from './commands/inspectCommand';
 import { registerInspectWithCurrentRulesFileCommand } from './commands/inspectWithCurrentRulesFileCommand';
-import { registerWrapWithLogCommand, registerUnwrapLogCommand } from './commands/jsonCommands';
+import { registerWrapWithLogCommand, registerUnwrapLogCommand, registerCreateNewRulesFileCommand } from './commands/jsonCommands';
 import { registerRunRuleCommand } from './commands/runRuleCommand';
 import { registerCliCommands } from './commands/cliCommands';
 import { getOutputChannel, disposeOutputChannel, resetOutputChannelManager } from './utils/outputChannel';
@@ -32,6 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
     const inspectWithCurrentRulesFileCommand = registerInspectWithCurrentRulesFileCommand(context);
     const wrapWithLogCommand = registerWrapWithLogCommand();
     const unwrapLogCommand = registerUnwrapLogCommand();
+    const createNewRulesFileCommand = registerCreateNewRulesFileCommand();
     const runRuleCommand = registerRunRuleCommand(context, outputChannel);
     const cliCommands = registerCliCommands(context);
 
@@ -40,6 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
         inspectWithCurrentRulesFileCommand, 
         wrapWithLogCommand, 
         unwrapLogCommand, 
+        createNewRulesFileCommand,
         runRuleCommand,
         ...cliCommands
     );
