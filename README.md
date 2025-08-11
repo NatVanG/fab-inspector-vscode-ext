@@ -1,7 +1,7 @@
 [![Build Extension](https://github.com/NatVanG/fab-inspector-vscode-ext/actions/workflows/build.yml/badge.svg)](https://github.com/NatVanG/fab-inspector-vscode-ext/actions/workflows/build.yml)
 [![Release Extension](https://github.com/NatVanG/fab-inspector-vscode-ext/actions/workflows/release.yml/badge.svg)](https://github.com/NatVanG/fab-inspector-vscode-ext/actions/workflows/release.yml)
 
-# Fab Inspector for VS Code
+# Fab Inspector for VS Code (Preview)
 
 A Visual Studio Code extension that provides a seamless integration with the [Fab Inspector](https://github.com/NatVanG/PBI-InspectorV2) CLI executable, enabling developers to analyze and inspect Microsoft Fabric CI/CD items with Fab Inspector rules directly from their VS Code workspace.
 
@@ -16,10 +16,10 @@ The repository for Fab Inspector (also known as PBI Inspector V2 - full name cha
 ## 🚀 Features
 
 ### **📋 Commands**
-- **Fab Inspector: Run** - Interactive inspection with customizable output formats and full control
+- **Fab Inspector: Run** - Rules file execution with customizable output formats (Console or HTML)
 - **Fab Inspector: Run Current Rules** - Quick execution of the currently open rules file  
 - **Fab Inspector: Run Selected Rule** - Execute individual rules for quick testing and validation
-- **Multiple Output Formats**: Generate reports in HTML to the VS Code output console
+- **Fab Inspector: Create New Rules File** - Creates a new rules file with a templated rule to get you started
 
 ### **🔧 JSON Rule Debug Commands**
 - **Fab Inspector: Log Un\Wrap** - Un\Wrap a selected Fab Inspector rule operation with log nodes for debug output to console
@@ -30,6 +30,10 @@ The repository for Fab Inspector (also known as PBI Inspector V2 - full name cha
 
 ### **📁 Workspace Integration**
 - **Rules Folder Support**: Organize rules in the `fab-inspector-rules` folder at the root of your VS Code folder
+
+## **⬇️ Extension Installation**
+While in Preview the extension is not available in the VS Marketplace. To install, download the VSIX file from the released assets at https://github.com/NatVanG/fab-inspector-vscode-ext/releases
+and import it into VS Code.
 
 ## 📋 Requirements
 
@@ -48,8 +52,8 @@ The extension requires .NET 8 runtime to execute the Fab Inspector CLI.
 
 ### **Fab Inspector CLI**
 - **Automatic Download**: The Fab Inspector CLI is automatically downloaded when first needed from the "CLI" releases published to https://github.com/NatVanG/PBI-InspectorV2/releases.
-- **Version Management**: Configurable CLI version selection (latest or specific versions)
-- **Update Management**: Optional auto-updates (enabled by default) with configurable cache expiry intervals
+- **Version Management**: Settings allow for configurable CLI version selection (latest or specific versions)
+- **Update Management**: Settings allow for optional auto-updates of the CLI (enabled by default) with configurable cache expiry intervals
 
 > **💡 Note**: Enabling auto-update is recommended to get the latest Fab Inspector CLI fixes and performance improvements.
 
