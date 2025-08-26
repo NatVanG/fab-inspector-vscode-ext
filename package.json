@@ -2,7 +2,7 @@
   "name": "fab-inspector",
   "displayName": "Fab Inspector",
   "description": "Develop, debug and run Fab Inspector unit tests for Microsoft Fabric CI/CD items directly within VS Code.",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "publisher": "NatVanG",
   "license": "MIT",
   "engines": {
@@ -161,10 +161,6 @@
   },
   "homepage": "https://github.com/NatVanG/fab-inspector-vscode-ext#readme",
   "qna": "https://github.com/NatVanG/fab-inspector-vscode-ext/discussions",
-  "galleryBanner": {
-    "color": "#C80000",
-    "theme": "dark"
-  },
   "bugs": {
     "url": "https://github.com/NatVanG/fab-inspector-vscode-ext/issues"
   },

@@ -86,7 +86,7 @@ jobs:
           echo "::error::VSCE_PAT secret is not set. Please add your Visual Studio Marketplace Personal Access Token as VSCE_PAT in repository secrets."
           exit 1
         fi
-        vsce publish -p $VSCE_PAT --pre-release
+        vsce publish -p $VSCE_PAT
 
     - name: Success notification
       run: |

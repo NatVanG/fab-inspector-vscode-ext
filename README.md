@@ -32,8 +32,7 @@ The repository for Fab Inspector (also known as PBI Inspector V2 - full name cha
 - **Rules Folder Support**: Organize rules in the `fab-inspector-rules` folder at the root of your VS Code folder
 
 ## **⬇️ Extension Installation**
-While in Preview the extension is not available in the VS Marketplace. To install, download the VSIX file from the released assets at https://github.com/NatVanG/fab-inspector-vscode-ext/releases
-and import it into VS Code.
+The entension can be installed from the Visual Studio Marketplace at https://marketplace.visualstudio.com/items?itemName=NatVanG.fab-inspector.
 
 ## 📋 Requirements
 
